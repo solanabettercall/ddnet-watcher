@@ -50,7 +50,6 @@ export class ObserverManagerService implements OnModuleDestroy {
 
     await observer.disconnect();
     this.observers.delete(key);
-    this.logger.log(`Наблюдатель для ${key} успешно удалён.`);
   }
 
   @Cron(CronExpression.EVERY_5_SECONDS, {
@@ -67,7 +66,6 @@ export class ObserverManagerService implements OnModuleDestroy {
   async disconnectAll(): Promise<void> {
     for (const [key, observer] of this.observers) {
       await observer.disconnect();
-      this.logger.log(`Наблюдатель для ${key} успешно отключён.`);
     }
     this.observers.clear();
     this.logger.log('Все наблюдатели успешно отключены.');
