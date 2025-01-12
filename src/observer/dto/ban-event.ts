@@ -1,20 +1,36 @@
-export class BanEventDto {
+export interface IServerContext {
+  ip: string;
+  port: number;
+}
+
+export interface IBanEvent {
+  target: string;
+
+  until?: Date;
+
+  reason: string;
+}
+
+export abstract class EventDto {
+  constructor(public server: IServerContext) {}
+}
+
+export class BanEventDto extends EventDto implements IBanEvent {
   target: string;
 
   until?: Date;
 
   reason: string;
 
-  constructor(dto: Partial<BanEventDto>) {
+  constructor(server: IServerContext, dto: IBanEvent) {
+    super(server);
     Object.assign(this, dto);
   }
 
   toString(): string {
-    if (this.until) {
-      const untilFormatted = this.until.toISOString();
-      return `'${this.target}' забанен до ${untilFormatted} по причине: '${this.reason}'.`;
-    } else {
-      return `'${this.target}' забанен навсегда по причине: '${this.reason}'.`;
-    }
+    const untilText = this.until
+      ? `до ${this.until.toISOString()}`
+      : 'навсегда';
+    return `[${this.server.ip}:${this.server.port}] '${this.target}' забанен ${untilText} по причине: '${this.reason}'.`;
   }
 }

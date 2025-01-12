@@ -161,11 +161,17 @@ export class ObserverService {
     if (banWithMinutes) {
       const [, target, minutes, reason] = banWithMinutes;
       const until = parseDateFromMinutes(minutes);
-      const banEvent = new BanEventDto({
-        reason,
-        target,
-        until,
-      });
+      const banEvent = new BanEventDto(
+        {
+          ip: this.config.ip,
+          port: this.config.port,
+        },
+        {
+          reason,
+          target,
+          until,
+        },
+      );
       this.logger.debug(banEvent);
       return true;
     }
@@ -177,7 +183,13 @@ export class ObserverService {
     if (permanentBan) {
       const [, target, reason] = permanentBan;
 
-      const banEvent = new BanEventDto({ reason, target });
+      const banEvent = new BanEventDto(
+        {
+          ip: this.config.ip,
+          port: this.config.port,
+        },
+        { reason, target },
+      );
       this.logger.debug(banEvent);
       return true;
     }
@@ -190,11 +202,17 @@ export class ObserverService {
       const [, target, reason, until] = banUntil;
       const parsedDate = parseDate(until);
 
-      const banEvent = new BanEventDto({
-        reason,
-        target,
-        until: parsedDate,
-      });
+      const banEvent = new BanEventDto(
+        {
+          ip: this.config.ip,
+          port: this.config.port,
+        },
+        {
+          reason,
+          target,
+          until: parsedDate,
+        },
+      );
       this.logger.debug(banEvent);
 
       return true;
