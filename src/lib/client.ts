@@ -1124,6 +1124,7 @@ export class Client extends EventEmitter {
         if (this.socket) this.socket.close();
         this.socket = undefined;
         this.State = States.STATE_OFFLINE;
+        this.emit('disconnect', 'Отключен пользователем');
       });
     });
   }

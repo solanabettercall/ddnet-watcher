@@ -10,17 +10,16 @@ export class AppService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    const config: ObserverConfigDto = {
-      ip: '172.19.0.1',
+    await this.observerManagerService.addObserver({
+      ip: '176.98.40.225',
       port: 8303,
       botName: 'rock',
-    };
-    await this.observerManagerService.addObserver(config);
-    // await this.observerManagerService.addObserver(config);
+    });
+
     // await this.observerManagerService.addObserver({
     //   ip: '172.19.0.1',
-    //   port: 8304,
-    //   botName: 'rock2',
+    //   port: 8303,
+    //   botName: 'rock',
     // });
   }
 

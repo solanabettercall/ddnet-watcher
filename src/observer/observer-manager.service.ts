@@ -33,7 +33,7 @@ export class ObserverManagerService implements OnModuleDestroy {
       await observer.connect();
     } catch (err) {
       this.logger.error(
-        `Не удалось подключить наблюдателя для ${key}: ${err.message}`,
+        `Не удалось подключить наблюдателя для ${key}: ${err.message}.`,
       );
     }
     this.observers.set(key, observer);
