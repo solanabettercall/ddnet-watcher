@@ -10,6 +10,7 @@ import {
   voteKickRegex,
   voteSpectateRegex,
 } from './regex';
+import { parseDate } from 'src/utils/parse-date';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -181,8 +182,10 @@ export class ObserverService {
     const banUntil = text.match(banWithUntilRegex);
     if (banUntil) {
       const [, target, reason, until] = banUntil;
+      const parsedDate = parseDate(until);
+
       this.logger.debug(
-        `'${target}' забанен до ${until} по причине: '${reason}'.`,
+        `'${target}' забанен до ${parsedDate} по причине: '${reason}'.`,
       );
       return true;
     }
