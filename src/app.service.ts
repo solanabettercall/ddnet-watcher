@@ -15,7 +15,6 @@ export class AppService implements OnApplicationBootstrap {
       port: 8303,
       botName: 'rock',
     });
-
     // await this.observerManagerService.addObserver({
     //   ip: '172.19.0.1',
     //   port: 8303,

@@ -17,6 +17,7 @@ import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteType } from './interfaces/vote.interface';
 import { KickEventDto } from './dto/events/kick-event.dto';
+import { Queue } from 'bull';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -27,7 +28,10 @@ export class ObserverService {
   private readonly getServerName = () =>
     `${this.config.ip}:${this.config.port}`;
 
-  constructor(public readonly config: ObserverConfigDto) {
+  constructor(
+    private readonly eventsQueue: Queue<IMessage>,
+    public readonly config: ObserverConfigDto,
+  ) {
     if (!this.config) return;
     this.client = new Client(
       this.config.ip,
@@ -47,8 +51,6 @@ export class ObserverService {
   private registerEventHandlers(): void {
     this.client.on('connected', () => {
       this.logger.log(`Бот ${this.config.botName} подключен`);
-      // this.client.game.Say('Привет! Я бот-наблюдатель');
-
       this.connected = true;
     });
 
@@ -56,7 +58,6 @@ export class ObserverService {
       this.client.game.SetTeam(-1);
       const { message: text } = message;
       const clientId = message?.client_id;
-      console.log(clientId);
       if (clientId === -1) {
         if (this.handleKickWithReason(text)) return;
         if (this.handleKickWithoutReason(text)) return;
@@ -71,7 +72,12 @@ export class ObserverService {
 
         this.logger.verbose(text);
       } else {
-        this.logger.log(text);
+        this.eventsQueue.add(message, {
+          debounce: {
+            id: message.message,
+            ttl: 300,
+          },
+        });
       }
     });
 
