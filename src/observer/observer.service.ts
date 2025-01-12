@@ -16,6 +16,7 @@ import { BanEventDto } from './dto/events/ban-event.dto';
 import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteType } from './interfaces/vote.interface';
+import { KickEventDto } from './dto/events/kick-event.dto';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -95,8 +96,15 @@ export class ObserverService {
   private handleKickWithReason(text: string): boolean {
     const kickWithReason = text.match(kickWithReasonRegex);
     if (kickWithReason) {
-      const [, username, reason] = kickWithReason;
-      this.logger.debug(`'${username}' исключен по причине: '${reason}'.`);
+      const [, target, reason] = kickWithReason;
+      const kickEvent = new KickEventDto(
+        { ...this.config },
+        {
+          target,
+          reason,
+        },
+      );
+      this.logger.debug(kickEvent);
       return true;
     }
     return false;
@@ -105,14 +113,22 @@ export class ObserverService {
   private handleKickWithoutReason(text: string): boolean {
     const kickWithoutReason = text.match(kickWithoutReasonRegex);
     if (kickWithoutReason) {
-      const [, username] = kickWithoutReason;
-      this.logger.debug(`'${username}' исключен.`);
+      const [, target] = kickWithoutReason;
+      const kickEvent = new KickEventDto(
+        { ...this.config },
+        {
+          target,
+          reason: null,
+        },
+      );
+      this.logger.debug(kickEvent);
       return true;
     }
     return false;
   }
   //#endregion
 
+  //#region Голосования
   private handleVoteSpectate(text: string): boolean {
     const voteSpectate = text.match(voteSpectateRegex);
     if (voteSpectate) {
@@ -204,6 +220,7 @@ export class ObserverService {
     }
     return false;
   }
+  //#endregion
 
   private handleBanWithMinutes(text: string) {
     const banWithMinutes = text.match(banWithMinutesRegex);
