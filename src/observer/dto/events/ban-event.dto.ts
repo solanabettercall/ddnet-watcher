@@ -1,28 +1,15 @@
-export interface IServerContext {
-  ip: string;
-  port: number;
-}
+import { BaseEventDto } from '../../abstract/base-event.dto';
+import { IBan } from '../../interfaces/ban.interface';
+import { IServerContext } from '../../interfaces/server-context.interface';
 
-export interface IBanEvent {
-  target: string;
-
-  until?: Date;
-
-  reason: string;
-}
-
-export abstract class EventDto {
-  constructor(public server: IServerContext) {}
-}
-
-export class BanEventDto extends EventDto implements IBanEvent {
+export class BanEventDto extends BaseEventDto implements IBan {
   target: string;
 
   until?: Date;
 
   reason: string;
 
-  constructor(server: IServerContext, dto: IBanEvent) {
+  constructor(server: IServerContext, dto: IBan) {
     super(server);
     Object.assign(this, dto);
   }

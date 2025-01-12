@@ -9,9 +9,13 @@ import {
   permanentBanRegex,
   voteKickRegex,
   voteSpectateRegex,
+  voteChangeOptionRegex,
 } from './regex';
 import { parseDate, parseDateFromMinutes } from 'src/utils/parse-date';
-import { BanEventDto } from './dto/ban-event';
+import { BanEventDto } from './dto/events/ban-event.dto';
+import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
+import { VoteEventDto } from './dto/events/vote-event.dto';
+import { VoteType } from './interfaces/vote.interface';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -57,6 +61,7 @@ export class ObserverService {
         if (this.handleKickWithoutReason(text)) return;
         if (this.handleVoteSpectate(text)) return;
         if (this.handleVoteKick(text)) return;
+        if (this.handleVoteChangeOption(text)) return;
         if (this.handleVotePassed(text)) return;
         if (this.handleVoteFailed(text)) return;
         if (this.handleBanUntil(text)) return;
@@ -86,6 +91,7 @@ export class ObserverService {
     return this.connected;
   }
 
+  //#region Кик
   private handleKickWithReason(text: string): boolean {
     const kickWithReason = text.match(kickWithReasonRegex);
     if (kickWithReason) {
@@ -105,20 +111,25 @@ export class ObserverService {
     }
     return false;
   }
+  //#endregion
 
   private handleVoteSpectate(text: string): boolean {
     const voteSpectate = text.match(voteSpectateRegex);
     if (voteSpectate) {
       const [, voter, target, reason] = voteSpectate;
-      if (reason === 'No reason given') {
-        this.logger.debug(
-          `'${voter}' проголосовал за перевод в наблюдатели '${target}'.`,
-        );
-      } else {
-        this.logger.debug(
-          `'${voter}' проголосовал за перевод в наблюдатели '${target}'. По причине: '${reason}'`,
-        );
-      }
+
+      const vote = new VoteEventDto(
+        { ...this.config },
+        {
+          target,
+          voter,
+          reason,
+          type: VoteType.Spectate,
+        },
+      );
+
+      this.logger.debug(vote);
+
       return true;
     }
     return false;
@@ -128,13 +139,39 @@ export class ObserverService {
     const voteKick = text.match(voteKickRegex);
     if (voteKick) {
       const [, voter, target, reason] = voteKick;
-      if (reason === 'No reason given') {
-        this.logger.debug(`'${voter}' проголосовал за исключение '${target}'.`);
-      } else {
-        this.logger.debug(
-          `'${voter}' проголосовал за исключение '${target}'. По причине: '${reason}'`,
-        );
-      }
+
+      const vote = new VoteEventDto(
+        { ...this.config },
+        {
+          target,
+          voter,
+          reason,
+          type: VoteType.Kick,
+        },
+      );
+
+      this.logger.debug(vote);
+      return true;
+    }
+    return false;
+  }
+
+  private handleVoteChangeOption(text: string): boolean {
+    const voteChangeOption = text.match(voteChangeOptionRegex);
+    if (voteChangeOption) {
+      const [, voter, target, reason] = voteChangeOption;
+
+      const vote = new VoteEventDto(
+        { ...this.config },
+        {
+          target,
+          voter,
+          reason,
+          type: VoteType.Option,
+        },
+      );
+
+      this.logger.debug(vote);
       return true;
     }
     return false;
@@ -142,15 +179,27 @@ export class ObserverService {
 
   private handleVotePassed(text: string): boolean {
     if (text === 'Vote passed') {
-      this.logger.debug('Голосование прошло');
+      const votingResult = new VoteResultEventDto(
+        { ...this.config },
+        {
+          success: true,
+        },
+      );
+      this.logger.debug(votingResult);
       return true;
     }
     return false;
   }
 
   private handleVoteFailed(text: string): boolean {
-    if (text === 'Vote failed') {
-      this.logger.debug('Голосование не прошло');
+    if (text === 'Vote failed' || text.includes('canceled their vote')) {
+      const votingResult = new VoteResultEventDto(
+        { ...this.config },
+        {
+          success: false,
+        },
+      );
+      this.logger.debug(votingResult);
       return true;
     }
     return false;

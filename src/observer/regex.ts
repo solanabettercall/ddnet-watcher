@@ -8,6 +8,9 @@ export const voteSpectateRegex =
 
 export const voteKickRegex = /^'(.+)' called for vote to kick '(.+)' \((.+)\)$/;
 
+export const voteChangeOptionRegex =
+  /^'(.+)' called vote to change server option '(.+)' \((.+)\)$/;
+
 export const banWithMinutesRegex =
   /^'(.+)' has left the game \(You have been banned for ([0-9]+) minute(?:s)? \((.+)\)\)$/;
 
