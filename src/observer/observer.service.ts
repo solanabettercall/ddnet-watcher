@@ -1,10 +1,12 @@
-import { Injectable, Logger, Scope } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ObserverConfigDto } from './dto/observer-config.dto';
-import { SnapshotItemTypes } from 'src/lib/enums_types/types';
 import { Client, IMessage } from 'src/lib/client';
 import {
+  banWithUntilRegex,
+  banWithMinutesRegex,
   kickWithoutReasonRegex,
   kickWithReasonRegex,
+  permanentBanRegex,
   voteKickRegex,
   voteSpectateRegex,
 } from './regex';
@@ -55,14 +57,19 @@ export class ObserverService {
         if (this.handleVoteKick(text)) return;
         if (this.handleVotePassed(text)) return;
         if (this.handleVoteFailed(text)) return;
+        console.log(this.handleBanUntil(text));
+        if (this.handleBanUntil(text)) return;
+        if (this.handleBanWithMinutes(text)) return;
+        if (this.handlePermanentBan(text)) return;
+
         this.logger.verbose(text);
       } else {
         this.logger.log(text);
       }
     });
 
-    this.client.on('disconnect', () => {
-      this.logger.warn(`Бот ${this.config.botName} отключен`);
+    this.client.on('disconnect', (reason: string) => {
+      this.logger.warn(`Бот ${this.config.botName} отключен: ${reason}`);
       this.connected = false;
     });
   }
@@ -143,6 +150,40 @@ export class ObserverService {
   private handleVoteFailed(text: string): boolean {
     if (text === 'Vote failed') {
       this.logger.debug('Голосование не прошло');
+      return true;
+    }
+    return false;
+  }
+
+  private handleBanWithMinutes(text: string) {
+    const banWithMinutes = text.match(banWithMinutesRegex);
+    if (banWithMinutes) {
+      const [, target, minutes, reason] = banWithMinutes;
+      this.logger.debug(
+        `'${target}' забанен на ${minutes} минут по причине: '${reason}'.`,
+      );
+      return true;
+    }
+    return false;
+  }
+
+  private handlePermanentBan(text: string) {
+    const permanentBan = text.match(permanentBanRegex);
+    if (permanentBan) {
+      const [, target, reason] = permanentBan;
+      this.logger.debug(`'${target}' забанен по причине: '${reason}'.`);
+      return true;
+    }
+    return false;
+  }
+
+  private handleBanUntil(text: string) {
+    const banUntil = text.match(banWithUntilRegex);
+    if (banUntil) {
+      const [, target, reason, until] = banUntil;
+      this.logger.debug(
+        `'${target}' забанен до ${until} по причине: '${reason}'.`,
+      );
       return true;
     }
     return false;
