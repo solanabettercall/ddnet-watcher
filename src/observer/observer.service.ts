@@ -1,7 +1,7 @@
 import { Injectable, Logger, Scope } from '@nestjs/common';
-import { Client } from 'teeworlds';
 import { ObserverConfigDto } from './dto/observer-config.dto';
-import { SnapshotItemTypes } from 'teeworlds/lib/enums_types/types';
+import { SnapshotItemTypes } from 'src/lib/enums_types/types';
+import { Client } from 'src/lib/client';
 
 interface IMessage {
   team: number;
