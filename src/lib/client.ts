@@ -87,7 +87,7 @@ var messageTypes = [
   ],
 ];
 
-declare interface iMessage {
+export declare interface IMessage {
   team: number;
   client_id: number;
   author?: {
@@ -134,7 +134,7 @@ interface ClientEvents {
   connected: () => void;
   disconnect: (reason: string) => void;
   emote: (message: iEmoticon) => void;
-  message: (message: iMessage) => void;
+  message: (message: IMessage) => void;
   broadcast: (message: string) => void;
   kill: (kill: iKillMsg) => void;
   motd: (message: string) => void;
@@ -613,7 +613,8 @@ export class Client extends EventEmitter {
 
     this.time = new Date().getTime() + 2000; // start sending keepalives after 2s
 
-    if (this.socket)
+    if (this.socket) {
+      this.socket.removeAllListeners('message');
       this.socket.on('message', (packet, rinfo) => {
         if (
           this.State == 0 ||
@@ -1012,11 +1013,11 @@ export class Client extends EventEmitter {
             }
             if (chunk.msgid == NETMSG.Game.SV_CHAT) {
               let unpacker = new MsgUnpacker(chunk.raw);
-              let unpacked: iMessage = {
+              let unpacked: IMessage = {
                 team: unpacker.unpackInt(),
                 client_id: unpacker.unpackInt(),
                 message: unpacker.unpackString(),
-              } as iMessage;
+              } as IMessage;
 
               if (unpacked.client_id != -1) {
                 unpacked.author = {
@@ -1086,6 +1087,7 @@ export class Client extends EventEmitter {
           }
         }
       });
+    }
   }
   /** Sending the input. (automatically done unless options.lightweight is on) */
   sendInput(input = this.movement.input) {

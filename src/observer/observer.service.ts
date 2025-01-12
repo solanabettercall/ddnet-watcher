@@ -1,17 +1,7 @@
 import { Injectable, Logger, Scope } from '@nestjs/common';
 import { ObserverConfigDto } from './dto/observer-config.dto';
 import { SnapshotItemTypes } from 'src/lib/enums_types/types';
-import { Client } from 'src/lib/client';
-
-interface IMessage {
-  team: number;
-  client_id: number;
-  author?: {
-    ClientInfo?: SnapshotItemTypes.ClientInfo;
-    PlayerInfo?: SnapshotItemTypes.PlayerInfo;
-  };
-  message: string;
-}
+import { Client, IMessage } from 'src/lib/client';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -28,14 +18,12 @@ export class ObserverService {
       this.config.ip,
       this.config.port,
       this.config.botName,
-      { timeout: 5000 },
     );
     this.logger = new Logger(this.getServerName());
     this.registerEventHandlers();
   }
 
   async connect(): Promise<void> {
-    this.client.removeAllListeners();
     if (!this.connected) {
       this.logger.log(`Попытка подключения`);
       await this.client.connect();
@@ -52,7 +40,7 @@ export class ObserverService {
     });
 
     this.client.on('message', (message: IMessage) => {
-      console.log(message);
+      this.logger.verbose(message.message);
     });
 
     this.client.on('disconnect', () => {
@@ -68,6 +56,7 @@ export class ObserverService {
       await this.client.Disconnect();
       this.logger.log('Отключен от сервера');
     }
+    this.connected = false;
   }
 
   public isConnected(): boolean {

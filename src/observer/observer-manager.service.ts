@@ -1,12 +1,13 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ObserverService } from './observer.service';
 import { ObserverConfigDto } from './dto/observer-config.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ObserverManagerService implements OnModuleDestroy {
   private readonly logger: Logger = new Logger(ObserverManagerService.name);
 
-  private observers: Map<string, ObserverService> = new Map();
+  public observers: Map<string, ObserverService> = new Map();
 
   constructor() {
     process.on('SIGINT', async () => {
@@ -21,7 +22,6 @@ export class ObserverManagerService implements OnModuleDestroy {
 
   async addObserver(config: ObserverConfigDto): Promise<void> {
     const key = this.getKey(config.ip, config.port);
-
     if (this.observers.has(key)) {
       this.logger.warn(`Наблюдатель для ${key} уже существует.`);
       return;
@@ -53,24 +53,9 @@ export class ObserverManagerService implements OnModuleDestroy {
     this.logger.log(`Наблюдатель для ${key} успешно удалён.`);
   }
 
-  //   private scheduleReconnect(observer: ObserverService, key: string): void {
-  //     Logger.log(`Запланирован реконнект для ${key} через 5 секунд...`);
-  //     setTimeout(async () => {
-  //       if (!observer.isConnected()) {
-  //         Logger.log(`Попытка реконнекта для ${key}...`);
-  //         try {
-  //           await observer.connect();
-  //           Logger.log(`Наблюдатель для ${key} успешно переподключён.`);
-  //         } catch (err) {
-  //           Logger.error(
-  //             `Не удалось переподключить наблюдателя для ${key}: ${err.message}`,
-  //           );
-  //           this.scheduleReconnect(observer, key);
-  //         }
-  //       }
-  //     }, 5000);
-  //   }
-
+  @Cron(CronExpression.EVERY_5_SECONDS, {
+    disabled: false,
+  })
   public async reconnectDisconnected() {
     this.observers.forEach(async (observer) => {
       if (!observer.isConnected()) {

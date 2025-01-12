@@ -3,11 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ObserverModule } from './observer/observer.module';
 import { ObserverManagerService } from './observer/observer-manager.service';
-import { SchedulerModule } from './scheduler/scheduler.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
-  imports: [ObserverModule, SchedulerModule],
+  imports: [ObserverModule, ScheduleModule.forRoot()],
   controllers: [AppController],
-  providers: [AppService, ObserverManagerService],
+  providers: [AppService],
 })
 export class AppModule {}
