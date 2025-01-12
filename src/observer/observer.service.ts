@@ -10,7 +10,8 @@ import {
   voteKickRegex,
   voteSpectateRegex,
 } from './regex';
-import { parseDate } from 'src/utils/parse-date';
+import { parseDate, parseDateFromMinutes } from 'src/utils/parse-date';
+import { BanEventDto } from './dto/ban-event';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -54,11 +55,10 @@ export class ObserverService {
       if (clientId === -1) {
         if (this.handleKickWithReason(text)) return;
         if (this.handleKickWithoutReason(text)) return;
-        if (this.handleSpectateKick(text)) return;
+        if (this.handleVoteSpectate(text)) return;
         if (this.handleVoteKick(text)) return;
         if (this.handleVotePassed(text)) return;
         if (this.handleVoteFailed(text)) return;
-        console.log(this.handleBanUntil(text));
         if (this.handleBanUntil(text)) return;
         if (this.handleBanWithMinutes(text)) return;
         if (this.handlePermanentBan(text)) return;
@@ -106,7 +106,7 @@ export class ObserverService {
     return false;
   }
 
-  private handleSpectateKick(text: string): boolean {
+  private handleVoteSpectate(text: string): boolean {
     const voteSpectate = text.match(voteSpectateRegex);
     if (voteSpectate) {
       const [, voter, target, reason] = voteSpectate;
@@ -160,9 +160,13 @@ export class ObserverService {
     const banWithMinutes = text.match(banWithMinutesRegex);
     if (banWithMinutes) {
       const [, target, minutes, reason] = banWithMinutes;
-      this.logger.debug(
-        `'${target}' забанен на ${minutes} минут по причине: '${reason}'.`,
-      );
+      const until = parseDateFromMinutes(minutes);
+      const banEvent = new BanEventDto({
+        reason,
+        target,
+        until,
+      });
+      this.logger.debug(banEvent);
       return true;
     }
     return false;
@@ -172,7 +176,9 @@ export class ObserverService {
     const permanentBan = text.match(permanentBanRegex);
     if (permanentBan) {
       const [, target, reason] = permanentBan;
-      this.logger.debug(`'${target}' забанен по причине: '${reason}'.`);
+
+      const banEvent = new BanEventDto({ reason, target });
+      this.logger.debug(banEvent);
       return true;
     }
     return false;
@@ -184,9 +190,13 @@ export class ObserverService {
       const [, target, reason, until] = banUntil;
       const parsedDate = parseDate(until);
 
-      this.logger.debug(
-        `'${target}' забанен до ${parsedDate} по причине: '${reason}'.`,
-      );
+      const banEvent = new BanEventDto({
+        reason,
+        target,
+        until: parsedDate,
+      });
+      this.logger.debug(banEvent);
+
       return true;
     }
     return false;
