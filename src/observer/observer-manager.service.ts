@@ -64,7 +64,7 @@ export class ObserverManagerService implements OnModuleDestroy {
   }
 
   async disconnectAll(): Promise<void> {
-    for (const [key, observer] of this.observers) {
+    for (const [_, observer] of this.observers) {
       await observer.disconnect();
     }
     this.observers.clear();
