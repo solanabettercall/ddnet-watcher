@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { ObserverConfigDto } from './dto/observer-config.dto';
 import { Client, IMessage } from 'src/lib/client';
 import {
@@ -7,7 +7,7 @@ import {
   kickWithoutReasonRegex,
   kickWithReasonRegex,
   permanentBanRegex,
-  voteKickRegex,
+  voteKickRegex as voteBanRegex,
   voteSpectateRegex,
   voteChangeOptionRegex,
 } from './regex';
@@ -18,6 +18,7 @@ import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteType } from './interfaces/vote.interface';
 import { KickEventDto } from './dto/events/kick-event.dto';
 import { Queue } from 'bull';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -29,7 +30,7 @@ export class ObserverService {
     `${this.config.ip}:${this.config.port}`;
 
   constructor(
-    private readonly eventsQueue: Queue<IMessage>,
+    private readonly eventEmitter: EventEmitter2,
     public readonly config: ObserverConfigDto,
   ) {
     if (!this.config) return;
@@ -52,17 +53,17 @@ export class ObserverService {
     this.client.on('connected', () => {
       this.logger.log(`Бот ${this.config.botName} подключен`);
       this.connected = true;
+      this.client.game.SetTeam(-1);
     });
 
     this.client.on('message', (message: IMessage) => {
-      this.client.game.SetTeam(-1);
       const { message: text } = message;
       const clientId = message?.client_id;
       if (clientId === -1) {
         if (this.handleKickWithReason(text)) return;
         if (this.handleKickWithoutReason(text)) return;
         if (this.handleVoteSpectate(text)) return;
-        if (this.handleVoteKick(text)) return;
+        if (this.handleVoteBan(text)) return;
         if (this.handleVoteChangeOption(text)) return;
         if (this.handleVotePassed(text)) return;
         if (this.handleVoteFailed(text)) return;
@@ -72,12 +73,13 @@ export class ObserverService {
 
         this.logger.verbose(text);
       } else {
-        this.eventsQueue.add(message, {
-          debounce: {
-            id: message.message,
-            ttl: 300,
-          },
-        });
+        // this.eventsQueue.add(message, {
+        //   debounce: {
+        //     id: message.message,
+        //     ttl: 300,
+        //   },
+        // });
+        this.logger.log(text);
       }
     });
 
@@ -110,7 +112,8 @@ export class ObserverService {
           reason,
         },
       );
-      this.logger.debug(kickEvent);
+      this.eventEmitter.emit('kick', kickEvent);
+
       return true;
     }
     return false;
@@ -127,7 +130,8 @@ export class ObserverService {
           reason: null,
         },
       );
-      this.logger.debug(kickEvent);
+      this.eventEmitter.emit('kick', kickEvent);
+
       return true;
     }
     return false;
@@ -150,17 +154,17 @@ export class ObserverService {
         },
       );
 
-      this.logger.debug(vote);
+      this.eventEmitter.emit('vote.spectate', vote);
 
       return true;
     }
     return false;
   }
 
-  private handleVoteKick(text: string): boolean {
-    const voteKick = text.match(voteKickRegex);
-    if (voteKick) {
-      const [, voter, target, reason] = voteKick;
+  private handleVoteBan(text: string): boolean {
+    const voteBan = text.match(voteBanRegex);
+    if (voteBan) {
+      const [, voter, target, reason] = voteBan;
 
       const vote = new VoteEventDto(
         { ...this.config },
@@ -168,11 +172,12 @@ export class ObserverService {
           target,
           voter,
           reason,
-          type: VoteType.Kick,
+          type: VoteType.Ban,
         },
       );
 
-      this.logger.debug(vote);
+      this.eventEmitter.emit('vote.ban', vote);
+
       return true;
     }
     return false;
@@ -193,7 +198,8 @@ export class ObserverService {
         },
       );
 
-      this.logger.debug(vote);
+      this.eventEmitter.emit('vote.changeOption', vote);
+
       return true;
     }
     return false;
@@ -207,7 +213,8 @@ export class ObserverService {
           success: true,
         },
       );
-      this.logger.debug(votingResult);
+      this.eventEmitter.emit('vote.passed', votingResult);
+
       return true;
     }
     return false;
@@ -221,7 +228,8 @@ export class ObserverService {
           success: false,
         },
       );
-      this.logger.debug(votingResult);
+      this.eventEmitter.emit('vote.failed', votingResult);
+
       return true;
     }
     return false;
@@ -244,7 +252,8 @@ export class ObserverService {
           until,
         },
       );
-      this.logger.debug(banEvent);
+      this.eventEmitter.emit('ban', banEvent);
+
       return true;
     }
     return false;
@@ -262,7 +271,8 @@ export class ObserverService {
         },
         { reason, target },
       );
-      this.logger.debug(banEvent);
+      this.eventEmitter.emit('ban', banEvent);
+
       return true;
     }
     return false;
@@ -285,7 +295,7 @@ export class ObserverService {
           until: parsedDate,
         },
       );
-      this.logger.debug(banEvent);
+      this.eventEmitter.emit('ban', banEvent);
 
       return true;
     }

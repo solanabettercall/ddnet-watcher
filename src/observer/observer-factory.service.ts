@@ -1,16 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { ObserverService } from './observer.service';
 import { ObserverConfigDto } from './dto/observer-config.dto';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
-import { EVENTS_QUEUE } from './consts';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ObserverFactoryService {
-  constructor(@InjectQueue(EVENTS_QUEUE) private readonly eventsQueue: Queue) {}
+  constructor(
+    @Inject(EventEmitter2) private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   create(config: ObserverConfigDto): ObserverService {
-    return new ObserverService(this.eventsQueue, config);
+    return new ObserverService(this.eventEmitter, config);
   }
 }

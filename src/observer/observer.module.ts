@@ -6,6 +6,8 @@ import { ObserverFactoryService } from './observer-factory.service';
 import { BullModule } from '@nestjs/bull';
 import { EVENTS_QUEUE } from './consts';
 import { EventsProcessor } from './processors/events.processor';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventListenerService } from './event-listener.service';
 
 @Module({
   imports: [
@@ -18,12 +20,14 @@ import { EventsProcessor } from './processors/events.processor';
     BullModule.registerQueue({
       name: EVENTS_QUEUE,
     }),
+    EventEmitterModule.forRoot(),
   ],
   providers: [
     ObserverService,
     ObserverManagerService,
     ObserverFactoryService,
     EventsProcessor,
+    EventListenerService,
   ],
   exports: [ObserverManagerService],
 })

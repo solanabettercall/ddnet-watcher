@@ -1,6 +1,6 @@
 export enum VoteType {
   Option = 'option',
-  Kick = 'kick',
+  Ban = 'kick',
   Spectate = 'spectate',
 }
 

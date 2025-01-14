@@ -15,7 +15,7 @@ export class VoteEventDto extends BaseEventDto implements IVote {
 
   toString(): string {
     switch (this.type) {
-      case VoteType.Kick: {
+      case VoteType.Ban: {
         if (this.reason === 'No reason given' || !this.reason) {
           return `'${this.voter}' проголосовал за исключение '${this.target}'.`;
         } else {
