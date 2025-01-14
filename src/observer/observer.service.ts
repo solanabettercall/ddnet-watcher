@@ -1,4 +1,4 @@
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ObserverConfigDto } from './dto/observer-config.dto';
 import { Client, IMessage } from 'src/lib/client';
 import {
@@ -17,11 +17,12 @@ import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteType } from './interfaces/vote.interface';
 import { KickEventDto } from './dto/events/kick-event.dto';
-import { Queue } from 'bull';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventDebouncer } from './event-debouncer';
 
 export class ObserverService {
   private readonly logger: Logger;
+  private readonly debouncer: EventDebouncer;
 
   private client: Client;
   private connected = false;
@@ -33,6 +34,7 @@ export class ObserverService {
     private readonly eventEmitter: EventEmitter2,
     public readonly config: ObserverConfigDto,
   ) {
+    this.debouncer = new EventDebouncer();
     if (!this.config) return;
     this.client = new Client(
       this.config.ip,
@@ -57,6 +59,8 @@ export class ObserverService {
     });
 
     this.client.on('message', (message: IMessage) => {
+      const eventKey = JSON.stringify(message);
+
       const { message: text } = message;
       const clientId = message?.client_id;
       if (clientId === -1) {
@@ -71,7 +75,10 @@ export class ObserverService {
         if (this.handleBanWithMinutes(text)) return;
         if (this.handlePermanentBan(text)) return;
 
-        this.logger.verbose(text);
+        // this.logger.verbose(text);
+        this.debouncer.emit(eventKey, message, (event) => {
+          this.eventEmitter.emit('chat.message.system', event);
+        });
       } else {
         // this.eventsQueue.add(message, {
         //   debounce: {
@@ -79,7 +86,11 @@ export class ObserverService {
         //     ttl: 300,
         //   },
         // });
-        this.logger.log(text);
+
+        this.debouncer.emit(eventKey, message, (event) => {
+          this.eventEmitter.emit('chat.message.player', event);
+        });
+        // this.logger.log(text);
       }
     });
 
@@ -112,7 +123,10 @@ export class ObserverService {
           reason,
         },
       );
-      this.eventEmitter.emit('kick', kickEvent);
+      const eventKey = JSON.stringify(kickEvent);
+      this.debouncer.emit(eventKey, kickEvent, (event) => {
+        this.eventEmitter.emit('kick', event);
+      });
 
       return true;
     }
@@ -130,8 +144,10 @@ export class ObserverService {
           reason: null,
         },
       );
-      this.eventEmitter.emit('kick', kickEvent);
-
+      const eventKey = JSON.stringify(kickEvent);
+      this.debouncer.emit(eventKey, kickEvent, (event) => {
+        this.eventEmitter.emit('kick', event);
+      });
       return true;
     }
     return false;

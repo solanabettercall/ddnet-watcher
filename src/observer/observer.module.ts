@@ -8,6 +8,7 @@ import { EVENTS_QUEUE } from './consts';
 import { EventsProcessor } from './processors/events.processor';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventListenerService } from './event-listener.service';
+import { EventDebouncer } from './event-debouncer';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EventListenerService } from './event-listener.service';
     ObserverFactoryService,
     EventsProcessor,
     EventListenerService,
+    EventDebouncer,
   ],
   exports: [ObserverManagerService],
 })

@@ -4,6 +4,7 @@ import { KickEventDto } from './dto/events/kick-event.dto';
 import { BanEventDto } from './dto/events/ban-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
+import { IMessage } from 'src/lib/client';
 
 @Injectable()
 export class EventListenerService {
@@ -40,7 +41,20 @@ export class EventListenerService {
   }
 
   @OnEvent('ban')
-  handleBab(event: BanEventDto) {
+  handleBan(event: BanEventDto) {
     this.logger.debug(event);
+  }
+
+  @OnEvent('chat.message.player')
+  handleChatMessagePlayer(event: IMessage) {
+    const name = event?.author?.ClientInfo?.name;
+    const message = event.message;
+    if (name) this.logger.log(`${name}: ${message}`);
+    else this.logger.log(message);
+  }
+
+  @OnEvent('chat.message.system')
+  handleChatMessageSystem(event: IMessage) {
+    this.logger.verbose(event.message);
   }
 }
