@@ -1,15 +1,15 @@
 import { BaseEventDto } from '../../abstract/base-event.dto';
-import { IBan } from '../../interfaces/ban.interface';
+import { IBanEvent } from '../../interfaces/ban-event.interface';
 import { IServerContext } from '../../interfaces/server-context.interface';
 
-export class BanEventDto extends BaseEventDto implements IBan {
+export class BanEventDto extends BaseEventDto implements IBanEvent {
   target: string;
 
   until?: Date;
 
   reason: string;
 
-  constructor(server: IServerContext, dto: IBan) {
+  constructor(server: IServerContext, dto: IBanEvent) {
     super(server);
     Object.assign(this, dto);
   }

@@ -1,9 +1,12 @@
-import { BaseEventDto } from 'src/observer/abstract/base-event.dto';
-import { IServerContext } from 'src/observer/interfaces/server-context.interface';
-import { IVote, VoteType } from 'src/observer/interfaces/vote.interface';
+import { BaseEventDto } from 'src/modules/observer/abstract/base-event.dto';
+import { IServerContext } from 'src/modules/observer/interfaces/server-context.interface';
+import {
+  IVoteEvent,
+  VoteType,
+} from 'src/modules/observer/interfaces/vote-event.interface';
 
-export class VoteEventDto extends BaseEventDto implements IVote {
-  constructor(server: IServerContext, dto: IVote) {
+export class VoteEventDto extends BaseEventDto implements IVoteEvent {
+  constructor(server: IServerContext, dto: IVoteEvent) {
     if (dto.reason === 'No reason given') dto.reason = null;
     super(server);
     Object.assign(this, dto);

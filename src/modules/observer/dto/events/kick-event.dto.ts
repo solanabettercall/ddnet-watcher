@@ -1,9 +1,9 @@
-import { IKick } from 'src/observer/interfaces/kick.interface';
+import { IKickEvent } from 'src/modules/observer/interfaces/kick-event.interface';
 import { BaseEventDto } from '../../abstract/base-event.dto';
 import { IServerContext } from '../../interfaces/server-context.interface';
 
-export class KickEventDto extends BaseEventDto implements IKick {
-  constructor(server: IServerContext, dto: IKick) {
+export class KickEventDto extends BaseEventDto implements IKickEvent {
+  constructor(server: IServerContext, dto: IKickEvent) {
     super(server);
     Object.assign(this, dto);
   }

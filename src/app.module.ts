@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ObserverModule } from './observer/observer.module';
-import { ObserverManagerService } from './observer/observer-manager.service';
+import { ObserverModule } from './modules/observer/observer.module';
+import { ObserverManagerService } from './modules/observer/observer-manager.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Vote } from './vote/entities/vote.entity';
 import { config } from 'dotenv';
+import { Address } from './entities/address.entity';
+import { Ban } from './entities/ban.entity';
+import { Clan } from './entities/clan.entity';
+import { Kick } from './entities/kick.entity';
+import { Player } from './entities/player.entity';
+import { Server } from './entities/server.entity';
+import { Vote } from './entities/vote.entity';
+import { Map } from './entities/map.entity';
 
 config();
 
@@ -21,7 +28,7 @@ config();
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [Vote],
+      entities: [Address, Ban, Clan, Kick, Map, Player, Server, Vote],
       synchronize: true,
     }),
   ],

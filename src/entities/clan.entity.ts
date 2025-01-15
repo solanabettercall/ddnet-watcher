@@ -1,19 +1,14 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity()
-export class Vote {
+@Entity('clans')
+export class Clan {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
   @Column({
-    name: 'voter',
+    name: 'name',
     nullable: false,
+    unique: true,
   })
-  voter: string;
-
-  @Column({
-    name: 'target',
-    nullable: false,
-  })
-  target: string;
+  name: string;
 }

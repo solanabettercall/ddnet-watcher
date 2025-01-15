@@ -4,7 +4,7 @@ export enum VoteType {
   Spectate = 'spectate',
 }
 
-export interface IVote {
+export interface IVoteEvent {
   voter: string;
   target: string;
   reason: string | null;

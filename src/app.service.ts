@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { ObserverService } from './observer/observer.service';
-import { ObserverManagerService } from './observer/observer-manager.service';
-import { ObserverConfigDto } from './observer/dto/observer-config.dto';
+import { ObserverService } from './modules/observer/observer.service';
+import { ObserverManagerService } from './modules/observer/observer-manager.service';
+import { ObserverConfigDto } from './modules/observer/dto/observer-config.dto';
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {

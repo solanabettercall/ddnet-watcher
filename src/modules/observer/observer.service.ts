@@ -15,7 +15,7 @@ import { parseDate, parseDateFromMinutes } from 'src/utils/parse-date';
 import { BanEventDto } from './dto/events/ban-event.dto';
 import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
-import { VoteType } from './interfaces/vote.interface';
+import { VoteType } from './interfaces/vote-event.interface';
 import { KickEventDto } from './dto/events/kick-event.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDebouncer } from './event-debouncer';

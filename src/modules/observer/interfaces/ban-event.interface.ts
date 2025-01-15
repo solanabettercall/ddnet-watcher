@@ -1,4 +1,4 @@
-export interface IBan {
+export interface IBanEvent {
   target: string;
 
   until?: Date;
