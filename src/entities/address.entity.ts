@@ -20,7 +20,8 @@ export class Address {
 
   @Column({
     name: 'port',
+    type: 'smallint',
     nullable: false,
   })
-  port: string;
+  port: number;
 }

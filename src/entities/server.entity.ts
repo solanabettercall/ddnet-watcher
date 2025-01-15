@@ -6,7 +6,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Address } from './address.entity';
-import { Map } from './map.entity';
+import { MapInfo } from './map.entity';
 
 @Entity('servers')
 @Unique(['address', 'map'])
@@ -18,7 +18,7 @@ export class Server {
   @JoinColumn({ name: 'address_id' })
   address: Address;
 
-  @ManyToOne(() => Map, { nullable: false, eager: true })
+  @ManyToOne(() => MapInfo, { nullable: false, eager: true })
   @JoinColumn({ name: 'map_id' })
-  map: Map;
+  map: MapInfo;
 }

@@ -13,7 +13,8 @@ import { Kick } from './entities/kick.entity';
 import { Player } from './entities/player.entity';
 import { Server } from './entities/server.entity';
 import { Vote } from './entities/vote.entity';
-import { Map } from './entities/map.entity';
+import { MapInfo } from './entities/map.entity';
+import { ServerDiscoveryModule } from './modules/server-discovery/server-discovery.module';
 
 config();
 
@@ -28,9 +29,10 @@ config();
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [Address, Ban, Clan, Kick, Map, Player, Server, Vote],
+      entities: [Address, Ban, Clan, Kick, MapInfo, Player, Server, Vote],
       synchronize: true,
     }),
+    ServerDiscoveryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

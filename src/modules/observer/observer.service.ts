@@ -59,6 +59,7 @@ export class ObserverService {
     });
 
     this.client.on('message', (message: IMessage) => {
+      if (!this.connected) return;
       const eventKey = JSON.stringify(message);
 
       const { message: text } = message;
