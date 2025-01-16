@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as ipaddr from 'ipaddr.js';
 import { parse } from 'uri-js';
 import { ServerDiscoveryApiService } from './server-discovery-api.service';
@@ -14,12 +14,10 @@ interface ServerInfo {
 }
 
 @Injectable()
-export class ServerDiscoveryService implements OnApplicationBootstrap {
+export class ServerDiscoveryService {
   constructor(
     private readonly serverDiscoveryApiService: ServerDiscoveryApiService,
   ) {}
-
-  private readonly cache = new Map<string, Player>();
 
   private parseAddress(addressString: string): Address {
     const parsed = parse(addressString);
@@ -66,7 +64,7 @@ export class ServerDiscoveryService implements OnApplicationBootstrap {
       .filter((server) => server !== null);
   }
 
-  private async getServersFull(): Promise<ServerInfo[]> {
+  public async getServersWithPlayers(): Promise<ServerInfo[]> {
     const rawServers = await this.serverDiscoveryApiService.fetchServers();
 
     return rawServers
@@ -109,25 +107,5 @@ export class ServerDiscoveryService implements OnApplicationBootstrap {
         return null;
       })
       .filter((server) => server !== null);
-  }
-
-  async onApplicationBootstrap() {
-    const servers = await this.getServersFull();
-
-    for (const server of servers) {
-      // if (
-      //   server.server.address.host === '62.122.215.19' &&
-      //   server.server.address.port === 8320
-      // ) {
-      //   console.log(server);
-      // }
-
-      for (const player of server.players) {
-        const { host, port } = server.server.address;
-        this.cache.set(`${host}:${port}:${player.name}`, player);
-      }
-    }
-
-    console.log(this.cache.get('62.122.215.19:8320:xewoiy'));
   }
 }
