@@ -11,4 +11,15 @@ export class Clan {
     unique: true,
   })
   name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  static create(name: string): Clan | null {
+    if (!name || name.trim() === '') {
+      return null;
+    }
+    return new Clan(name);
+  }
 }
