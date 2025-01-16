@@ -16,7 +16,8 @@ export class ServerDiscoveryService implements OnApplicationBootstrap {
     const parsed = parse(addressString);
     const address = new Address();
 
-    address.host = ipaddr.parse(parsed.host!).toNormalizedString();
+    const parsedHost = ipaddr.parse(parsed.host!);
+    address.host = parsedHost.toNormalizedString();
     address.port = parsed.port ? parseInt(String(parsed.port), 10) : 0;
     address.scheme = parsed.scheme;
 
@@ -26,20 +27,41 @@ export class ServerDiscoveryService implements OnApplicationBootstrap {
   private async getServers(): Promise<Server[]> {
     const rawServers = await this.serverDiscoveryApiService.fetchServers();
 
-    return rawServers.map((rawServer) => {
-      const server = new Server();
+    return rawServers
+      .flatMap((rawServer) => {
+        const parsedAddresses = rawServer.addresses
+          .map((address) => this.parseAddress(address))
+          .filter(
+            (parsedAddress) =>
+              ['tw-0.7+udp', 'tw-0.6+udp'].includes(parsedAddress.scheme) &&
+              ipaddr.parse(parsedAddress.host).kind() === 'ipv4',
+          )
+          .sort((a, b) => {
+            const priority = {
+              'tw-0.7+udp': 1,
+              'tw-0.6+udp': 2,
+            };
+            return (priority[a.scheme] || 99) - (priority[b.scheme] || 99);
+          });
 
-      server.map = new MapInfo();
-      server.map.name = rawServer.info.map.name;
-      // TODO: Выбирать наиболее подходящий сервер (последняя версия), неподдерживаемые протоколы отбрасывать
-      server.address = this.parseAddress(rawServer.addresses[0]);
-      return server;
-    });
+        if (parsedAddresses.length > 0) {
+          const server = new Server();
+          server.name = rawServer.info.name;
+          server.map = new MapInfo();
+          server.map.name = rawServer.info.map.name;
+          server.address = parsedAddresses[0];
+          return server;
+        }
+        return null;
+      })
+      .filter((server) => server !== null);
   }
 
   async onApplicationBootstrap() {
     const servers = await this.getServers();
 
-    console.log(servers);
+    for (const server of servers) {
+      console.log(server);
+    }
   }
 }

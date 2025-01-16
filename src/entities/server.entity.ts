@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   Unique,
+  Column,
 } from 'typeorm';
 import { Address } from './address.entity';
 import { MapInfo } from './map.entity';
@@ -21,4 +22,11 @@ export class Server {
   @ManyToOne(() => MapInfo, { nullable: false, eager: true })
   @JoinColumn({ name: 'map_id' })
   map: MapInfo;
+
+  @Column({
+    name: 'name',
+    nullable: false,
+    unique: false,
+  })
+  name: string;
 }
