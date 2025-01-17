@@ -6,9 +6,10 @@ import { ObserverFactoryService } from './observer-factory.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventListenerService } from './event-listener.service';
 import { EventDebouncer } from './event-debouncer';
+import { ServerDiscoveryModule } from '../server-discovery/server-discovery.module';
 
 @Module({
-  imports: [EventEmitterModule.forRoot()],
+  imports: [EventEmitterModule.forRoot(), ServerDiscoveryModule],
   providers: [
     ObserverService,
     ObserverManagerService,

@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as ipaddr from 'ipaddr.js';
 import { parse } from 'uri-js';
 import { ServerDiscoveryApiService } from './server-discovery-api.service';
-import { Address } from 'src/entities/address.entity';
-import { Server } from 'src/entities/server.entity';
-import { MapInfo } from 'src/entities/map.entity';
-import { Player } from 'src/entities/player.entity';
-import { Clan } from 'src/entities/clan.entity';
+import { Address } from 'src/modules/event-storage/entities/address.entity';
+import { Server } from 'src/modules/event-storage/entities/server.entity';
+import { MapInfo } from 'src/modules/event-storage/entities/map.entity';
+import { Player } from 'src/modules/event-storage/entities/player.entity';
+import { Clan } from 'src/modules/event-storage/entities/clan.entity';
 
 interface ServerInfo {
   server: Server;

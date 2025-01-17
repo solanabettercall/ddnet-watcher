@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ObserverService } from './observer.service';
-import { ObserverConfigDto } from './dto/observer-config.dto';
+import { ObserverServiceConfigDto } from './dto/observer-service-config.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ObserverFactoryService } from './observer-factory.service';
+import { ObserverFactoryServiceConfigDto } from './dto/observer-factory-service-config.dto';
 
 @Injectable()
 export class ObserverManagerService implements OnModuleDestroy {
@@ -21,14 +22,14 @@ export class ObserverManagerService implements OnModuleDestroy {
     return `${ip}:${port}`;
   }
 
-  async addObserver(config: ObserverConfigDto): Promise<void> {
-    const key = this.getKey(config.ip, config.port);
+  async addObserver(config: ObserverFactoryServiceConfigDto): Promise<void> {
+    const key = this.getKey(config.address.host, config.address.port);
     if (this.observers.has(key)) {
       this.logger.warn(`Наблюдатель для ${key} уже существует.`);
       return;
     }
 
-    const observer = this.observerFactory.create(config);
+    const observer = await this.observerFactory.create(config);
 
     try {
       await observer.connect();

@@ -6,15 +6,16 @@ import { ObserverManagerService } from './modules/observer/observer-manager.serv
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from 'dotenv';
-import { Address } from './entities/address.entity';
-import { Ban } from './entities/ban.entity';
-import { Clan } from './entities/clan.entity';
-import { Kick } from './entities/kick.entity';
-import { Player } from './entities/player.entity';
-import { Server } from './entities/server.entity';
-import { Vote } from './entities/vote.entity';
-import { MapInfo } from './entities/map.entity';
+import { Address } from './modules/event-storage/entities/address.entity';
+import { Ban } from './modules/event-storage/entities/ban.entity';
+import { Clan } from './modules/event-storage/entities/clan.entity';
+import { Kick } from './modules/event-storage/entities/kick.entity';
+import { Player } from './modules/event-storage/entities/player.entity';
+import { Server } from './modules/event-storage/entities/server.entity';
+import { Vote } from './modules/event-storage/entities/vote.entity';
+import { MapInfo } from './modules/event-storage/entities/map.entity';
 import { ServerDiscoveryModule } from './modules/server-discovery/server-discovery.module';
+import { EventStorageModule } from './modules/event-storage/event-storage.module';
 
 config();
 
@@ -33,6 +34,7 @@ config();
       synchronize: true,
     }),
     ServerDiscoveryModule,
+    EventStorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

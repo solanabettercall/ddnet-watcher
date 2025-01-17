@@ -36,6 +36,6 @@ export class ServerDiscoveryApiService {
   }
 
   public async fetchServers(): Promise<RawServer[]> {
-    return this.fetchServersFromApi();
+    return this.fetchServersFromFile();
   }
 }

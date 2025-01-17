@@ -37,6 +37,6 @@ import { ServerDiscoveryCacheService } from './server-discovery-cache.service';
     ServerDiscoveryService,
     ServerDiscoveryCacheService,
   ],
-  exports: [ServerDiscoveryService],
+  exports: [ServerDiscoveryService, ServerDiscoveryCacheService],
 })
 export class ServerDiscoveryModule {}

@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { ObserverConfigDto } from './dto/observer-config.dto';
+import { ObserverServiceConfigDto } from './dto/observer-service-config.dto';
 import { Client, IMessage } from 'src/lib/client';
 import {
   banWithUntilRegex,
@@ -28,17 +28,17 @@ export class ObserverService {
   private connected = false;
 
   private readonly getServerName = () =>
-    `${this.config.ip}:${this.config.port}`;
+    `${this.config.server.address.host}:${this.config.server.address.port}`;
 
   constructor(
     private readonly eventEmitter: EventEmitter2,
-    public readonly config: ObserverConfigDto,
+    public readonly config: ObserverServiceConfigDto,
   ) {
     this.debouncer = new EventDebouncer();
     if (!this.config) return;
     this.client = new Client(
-      this.config.ip,
-      this.config.port,
+      this.config.server.address.host,
+      this.config.server.address.port,
       this.config.botName,
     );
     this.logger = new Logger(this.getServerName());
@@ -56,6 +56,10 @@ export class ObserverService {
       this.logger.log(`Бот ${this.config.botName} подключен`);
       this.connected = true;
       this.client.game.SetTeam(-1);
+    });
+
+    this.client.on('map_details', (map_details) => {
+      this.config.server.map.name = map_details.map_name;
     });
 
     this.client.on('message', (message: IMessage) => {
@@ -118,7 +122,7 @@ export class ObserverService {
     if (kickWithReason) {
       const [, target, reason] = kickWithReason;
       const kickEvent = new KickEventDto(
-        { ...this.config },
+        { ...this.config.server },
         {
           target,
           reason,
@@ -138,13 +142,10 @@ export class ObserverService {
     const kickWithoutReason = text.match(kickWithoutReasonRegex);
     if (kickWithoutReason) {
       const [, target] = kickWithoutReason;
-      const kickEvent = new KickEventDto(
-        { ...this.config },
-        {
-          target,
-          reason: null,
-        },
-      );
+      const kickEvent = new KickEventDto(this.config.server, {
+        target,
+        reason: null,
+      });
       const eventKey = JSON.stringify(kickEvent);
       this.debouncer.emit(eventKey, kickEvent, (event) => {
         this.eventEmitter.emit('kick', event);
@@ -161,15 +162,12 @@ export class ObserverService {
     if (voteSpectate) {
       const [, voter, target, reason] = voteSpectate;
 
-      const vote = new VoteEventDto(
-        { ...this.config },
-        {
-          target,
-          voter,
-          reason,
-          type: VoteType.Spectate,
-        },
-      );
+      const vote = new VoteEventDto(this.config.server, {
+        target,
+        voter,
+        reason,
+        type: VoteType.Spectate,
+      });
 
       this.eventEmitter.emit('vote.spectate', vote);
 
@@ -183,15 +181,12 @@ export class ObserverService {
     if (voteBan) {
       const [, voter, target, reason] = voteBan;
 
-      const vote = new VoteEventDto(
-        { ...this.config },
-        {
-          target,
-          voter,
-          reason,
-          type: VoteType.Ban,
-        },
-      );
+      const vote = new VoteEventDto(this.config.server, {
+        target,
+        voter,
+        reason,
+        type: VoteType.Ban,
+      });
 
       this.eventEmitter.emit('vote.ban', vote);
 
@@ -205,15 +200,12 @@ export class ObserverService {
     if (voteChangeOption) {
       const [, voter, target, reason] = voteChangeOption;
 
-      const vote = new VoteEventDto(
-        { ...this.config },
-        {
-          target,
-          voter,
-          reason,
-          type: VoteType.Option,
-        },
-      );
+      const vote = new VoteEventDto(this.config.server, {
+        target,
+        voter,
+        reason,
+        type: VoteType.Option,
+      });
 
       this.eventEmitter.emit('vote.changeOption', vote);
 
@@ -224,12 +216,9 @@ export class ObserverService {
 
   private handleVotePassed(text: string): boolean {
     if (text === 'Vote passed') {
-      const votingResult = new VoteResultEventDto(
-        { ...this.config },
-        {
-          success: true,
-        },
-      );
+      const votingResult = new VoteResultEventDto(this.config.server, {
+        success: true,
+      });
       this.eventEmitter.emit('vote.passed', votingResult);
 
       return true;
@@ -239,12 +228,9 @@ export class ObserverService {
 
   private handleVoteFailed(text: string): boolean {
     if (text === 'Vote failed' || text.includes('canceled their vote')) {
-      const votingResult = new VoteResultEventDto(
-        { ...this.config },
-        {
-          success: false,
-        },
-      );
+      const votingResult = new VoteResultEventDto(this.config.server, {
+        success: false,
+      });
       this.eventEmitter.emit('vote.failed', votingResult);
 
       return true;
@@ -258,17 +244,11 @@ export class ObserverService {
     if (banWithMinutes) {
       const [, target, minutes, reason] = banWithMinutes;
       const until = parseDateFromMinutes(minutes);
-      const banEvent = new BanEventDto(
-        {
-          ip: this.config.ip,
-          port: this.config.port,
-        },
-        {
-          reason,
-          target,
-          until,
-        },
-      );
+      const banEvent = new BanEventDto(this.config.server, {
+        reason,
+        target,
+        until,
+      });
       this.eventEmitter.emit('ban', banEvent);
 
       return true;
@@ -281,13 +261,7 @@ export class ObserverService {
     if (permanentBan) {
       const [, target, reason] = permanentBan;
 
-      const banEvent = new BanEventDto(
-        {
-          ip: this.config.ip,
-          port: this.config.port,
-        },
-        { reason, target },
-      );
+      const banEvent = new BanEventDto(this.config.server, { reason, target });
       this.eventEmitter.emit('ban', banEvent);
 
       return true;
@@ -301,17 +275,11 @@ export class ObserverService {
       const [, target, reason, until] = banUntil;
       const parsedDate = parseDate(until);
 
-      const banEvent = new BanEventDto(
-        {
-          ip: this.config.ip,
-          port: this.config.port,
-        },
-        {
-          reason,
-          target,
-          until: parsedDate,
-        },
-      );
+      const banEvent = new BanEventDto(this.config.server, {
+        reason,
+        target,
+        until: parsedDate,
+      });
       this.eventEmitter.emit('ban', banEvent);
 
       return true;

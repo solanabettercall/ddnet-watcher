@@ -1,8 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
+import { IAddress } from '../interfaces';
 
 @Entity('addresses')
 @Unique(['scheme', 'host', 'port'])
-export class Address {
+export class Address implements IAddress {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
