@@ -176,11 +176,14 @@ export class ObserverService {
           });
 
           // Устанавливаем TTL для вышедшего игрока
-          await this.serverDiscoveryCacheService.updatePlayerTTL(
-            this.config.server.address,
-            player.name,
-            60,
-          );
+
+          this.debouncer.emit(eventKey, null, async () => {
+            await this.serverDiscoveryCacheService.updatePlayerTTL(
+              this.config.server.address,
+              player.name,
+              60,
+            );
+          });
         }
       }
 
