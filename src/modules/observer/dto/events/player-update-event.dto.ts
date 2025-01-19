@@ -24,7 +24,11 @@ export class PlayerUpdateEventDto
       );
     }
 
-    if (this.oldPlayer?.clan !== this.newPlayer?.clan) {
+    if (
+      this.oldPlayer?.clan !== this.newPlayer?.clan &&
+      this.newPlayer?.clan &&
+      this.oldPlayer?.clan
+    ) {
       changes.push(
         `клан с '${this.oldPlayer.clan.name}' на '${this.newPlayer.clan.name}'`,
       );

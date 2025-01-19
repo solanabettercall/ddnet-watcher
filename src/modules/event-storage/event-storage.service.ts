@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Ban } from './entities/ban.entity';
 import { Kick } from './entities/kick.entity';
 import { Vote } from './entities/vote.entity';
@@ -56,40 +56,50 @@ export class EventStorageService implements OnApplicationBootstrap {
     // return this.voteRepository.save<Vote>(vote);
   }
 
-  async saveBan(dto: Ban) {}
+  async saveBan(ban: Ban) {
+    console.log(ban);
+    const target = await this.findOrCreatePlayer(ban.target);
+
+    const server = await this.findOrCreateServer(ban.server);
+
+    ban.target = target;
+    ban.server = server;
+
+    this.logger.debug('Сохранили голосование');
+    return this.banRepository.save<Ban>(ban);
+  }
 
   async saveVote(vote: Vote) {
-    console.log(vote);
     const voter = await this.findOrCreatePlayer(vote.voter);
-    const target = vote.target
-      ? await this.findOrCreatePlayer(vote.target)
-      : null;
     const server = await this.findOrCreateServer(vote.server);
 
     vote.voter = voter;
-    vote.target = target;
+    if (vote.target) vote.target = await this.findOrCreatePlayer(vote.target);
     vote.server = server;
 
     this.logger.debug('Сохранили голосование');
+    console.log(vote);
     return this.voteRepository.save<Vote>(vote);
   }
 
   async saveKick(dto: Kick) {}
 
   private async findOrCreatePlayer(player: Player): Promise<Player> {
-    const clan = player.clan
-      ? await this.findOrCreateClan(player.clan.name)
-      : null;
+    const clan: Clan | null = await this.findOrCreateClan(player?.clan?.name);
+
+    console.log(clan);
 
     let existingPlayer = await this.playerRepository.findOne({
-      where: { name: player.name, clan: clan },
+      where: { name: player.name, clan: { id: clan ? clan.id : IsNull() } },
     });
+    console.log('existingPlayer', existingPlayer);
 
     if (!existingPlayer) {
       existingPlayer = this.playerRepository.create({
         ...player,
         clan: clan,
       });
+      console.log('existingPlayer create', existingPlayer);
       await this.playerRepository.save(existingPlayer);
     }
 

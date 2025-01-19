@@ -12,6 +12,7 @@ import { Server } from '../event-storage/entities/server.entity';
 import { JoinEventDto } from './dto/events/join-event.dto';
 import { LeaveEventDto } from './dto/events/leave-event.dto';
 import { PlayerUpdateEventDto } from './dto/events/player-update-event.dto';
+import { Ban } from '../event-storage/entities/ban.entity';
 
 @Injectable()
 export class EventListenerService {
@@ -32,19 +33,25 @@ export class EventListenerService {
     const vote = new Vote(event);
     vote.server = new Server(event.server);
 
-    Object.assign(vote, event);
+    await this.eventStorageService.saveVote(vote);
+    this.logger.debug(event);
+  }
+
+  @OnEvent('vote.ban', { async: true })
+  async handleVoteBan(event: VoteEventDto) {
+    const vote = new Vote(event);
+    vote.server = new Server(event.server);
 
     await this.eventStorageService.saveVote(vote);
     this.logger.debug(event);
   }
 
-  @OnEvent('vote.ban')
-  handleVoteBan(event: VoteEventDto) {
-    this.logger.debug(event);
-  }
+  @OnEvent('vote.changeOption', { async: true })
+  async handleVoteChangeOption(event: VoteEventDto) {
+    const vote = new Vote(event);
+    vote.server = new Server(event.server);
 
-  @OnEvent('vote.changeOption')
-  handleVoteChangeOption(event: VoteEventDto) {
+    await this.eventStorageService.saveVote(vote);
     this.logger.debug(event);
   }
 
@@ -58,8 +65,12 @@ export class EventListenerService {
     this.logger.debug(event);
   }
 
-  @OnEvent('ban')
-  handleBan(event: BanEventDto) {
+  @OnEvent('ban', { async: true })
+  async handleBan(event: BanEventDto) {
+    const ban = new Ban(event);
+    ban.server = new Server(event.server);
+
+    await this.eventStorageService.saveBan(ban);
     this.logger.debug(event);
   }
 

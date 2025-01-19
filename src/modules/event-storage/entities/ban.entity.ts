@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Server } from './server.entity';
 import { Player } from './player.entity';
+import { IBanEvent } from 'src/modules/observer/interfaces/ban-event.interface';
 
 @Entity('bans')
 export class Ban {
@@ -48,4 +49,8 @@ export class Ban {
     type: 'timestamp',
   })
   updatedAt: Date;
+
+  constructor(ban: IBanEvent) {
+    Object.assign(this, ban);
+  }
 }

@@ -19,7 +19,6 @@ export class Player {
   @Column({
     name: 'name',
     nullable: false,
-    unique: true,
   })
   name: string;
 
