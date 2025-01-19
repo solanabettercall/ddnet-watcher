@@ -26,8 +26,8 @@ export class ServerDiscoveryCacheService implements OnApplicationBootstrap {
   );
 
   private readonly redis = new Redis({
-    host: 'localhost',
-    port: 6379,
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT),
   });
 
   constructor(

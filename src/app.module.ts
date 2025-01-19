@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { InternalServerErrorException, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ObserverModule } from './modules/observer/observer.module';
@@ -23,15 +23,30 @@ config();
   imports: [
     ObserverModule,
     ScheduleModule.forRoot(),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: parseInt(process.env.DB_PORT, 10),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      entities: [Address, Ban, Clan, Kick, MapInfo, Player, Server, Vote],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      useFactory: () => {
+        const host = process.env.DB_HOST;
+        const port = parseInt(process.env.DB_PORT, 10);
+        const database = process.env.DB_NAME;
+        const username = process.env.DB_USER;
+        const password = process.env.DB_PASSWORD;
+        if (!host || !port || !database || !username || !password) {
+          throw new InternalServerErrorException(
+            'Неверная конфигурация typeorm',
+          );
+        }
+
+        return {
+          type: 'postgres',
+          host,
+          port,
+          username,
+          password,
+          database,
+          entities: [Address, Ban, Clan, Kick, MapInfo, Player, Server, Vote],
+          synchronize: true,
+        };
+      },
     }),
     ServerDiscoveryModule,
     EventStorageModule,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { InternalServerErrorException, Module } from '@nestjs/common';
 import { ServerDiscoveryApiService } from './server-discovery-api.service';
 import { HttpModule } from '@nestjs/axios';
 import { ServerDiscoveryService } from './server-discovery.service';
@@ -17,10 +17,14 @@ import { ServerDiscoveryCacheService } from './server-discovery-cache.service';
 
     CacheModule.registerAsync({
       useFactory: async () => {
+        const host = process.env.REDIS_HOST;
+        const port = parseInt(process.env.REDIS_PORT, 10);
+        if (!host || !port)
+          throw new InternalServerErrorException('Неверная конфигурация redis');
         const store = await redisStore({
           socket: {
-            host: 'localhost',
-            port: 6379,
+            host,
+            port,
           },
         });
 

@@ -1,4 +1,15 @@
 services:
+  app:
+    container_name: app
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '${APP_PORT}:${APP_PORT}'
+    volumes:
+      - app:/usr/src/pumpfun-scanner
+
   redis:
     container_name: cache
     image: redis/redis-stack:7.2.0-v14
@@ -32,3 +43,4 @@ services:
 
 volumes:
   db:
+  app:
