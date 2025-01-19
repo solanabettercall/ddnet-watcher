@@ -10,6 +10,8 @@ import {
   voteKickRegex as voteBanRegex,
   voteSpectateRegex,
   voteChangeOptionRegex,
+  playerJoinRegex,
+  playerLeaveRegex,
 } from './regex';
 import { parseDate, parseDateFromMinutes } from 'src/utils/parse-date';
 import { BanEventDto } from './dto/events/ban-event.dto';
@@ -19,6 +21,15 @@ import { VoteType } from './interfaces/vote-event.interface';
 import { KickEventDto } from './dto/events/kick-event.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDebouncer } from './event-debouncer';
+import { DeltaItem, SnapshotItemTypes } from 'src/lib/enums_types/types';
+import { ServerDiscoveryCacheService } from '../server-discovery/server-discovery-cache.service';
+import { Player } from '../event-storage/entities/player.entity';
+import { Address } from '../event-storage/entities/address.entity';
+import { JoinEventDto } from './dto/events/join-event.dto';
+import { LeaveEventDto } from './dto/events/leave-event.dto';
+import { SnapshotItemIDs } from 'src/lib/enums_types/protocol';
+import { PlayerUpdateEventDto } from './dto/events/player-update-event.dto';
+import { hashString } from 'src/utils/hast-string';
 
 export class ObserverService {
   private readonly logger: Logger;
@@ -33,6 +44,7 @@ export class ObserverService {
   constructor(
     private readonly eventEmitter: EventEmitter2,
     public readonly config: ObserverServiceConfigDto,
+    private readonly serverDiscoveryCacheService: ServerDiscoveryCacheService,
   ) {
     this.debouncer = new EventDebouncer();
     if (!this.config) return;
@@ -51,20 +63,134 @@ export class ObserverService {
     }
   }
 
+  private previousPlayers: Map<number, Player> = new Map();
+
   private registerEventHandlers(): void {
-    this.client.on('connected', () => {
+    this.client.on('connected', async () => {
       this.logger.log(`Бот ${this.config.botName} подключен`);
+
+      for (const { id, name, clan } of this.client.SnapshotUnpacker
+        .AllObjClientInfo) {
+        const player = new Player(name, clan);
+        this.previousPlayers.set(id, player);
+        await this.serverDiscoveryCacheService.cachePlayer(
+          this.config.server.address,
+          player,
+          0,
+        );
+      }
       this.connected = true;
       this.client.game.SetTeam(-1);
     });
 
-    this.client.on('map_details', (map_details) => {
+    this.client.on('map_details', async (map_details) => {
       this.config.server.map.name = map_details.map_name;
+      const serverKey = hashString(JSON.stringify(this.config.server));
+      this.debouncer.emit(serverKey, undefined, async () => {
+        await this.serverDiscoveryCacheService.сacheServer(
+          this.config.server,
+          0,
+        );
+      });
     });
 
-    this.client.on('message', (message: IMessage) => {
+    this.client.on('snapshot', async (items: DeltaItem[]) => {
       if (!this.connected) return;
-      const eventKey = JSON.stringify(message);
+
+      const parsedItems = items
+        .filter((item) => item.type_id === SnapshotItemIDs.OBJ_CLIENT_INFO)
+        .map(
+          (filteredItem) => filteredItem.parsed as SnapshotItemTypes.ClientInfo,
+        );
+
+      if (parsedItems.length <= 0) return;
+
+      const currentPlayers = new Map<number, Player>();
+
+      for (const { id, name, clan } of parsedItems) {
+        const newPlayer = new Player(name, clan);
+
+        // Получаем старого игрока из предыдущего состояния
+        const oldPlayer = this.previousPlayers.get(id);
+
+        if (oldPlayer) {
+          // Проверяем изменения игрока
+          if (!oldPlayer.equals(newPlayer)) {
+            const event = new PlayerUpdateEventDto(this.config.server, {
+              oldPlayer,
+              newPlayer,
+            });
+
+            const eventKey = hashString(event.toString());
+            this.debouncer.emit(eventKey, event, (event) => {
+              this.eventEmitter.emit('player.update', event);
+            });
+
+            // Устанавливаем TTL для старого игрока, если изменилось имя
+            if (oldPlayer.name !== newPlayer.name) {
+              await this.serverDiscoveryCacheService.updatePlayerTTL(
+                this.config.server.address,
+                oldPlayer.name,
+                60,
+              );
+            }
+
+            // Кэшируем обновлённого игрока
+            await this.serverDiscoveryCacheService.cachePlayer(
+              this.config.server.address,
+              newPlayer,
+              0,
+            );
+          }
+        } else {
+          // Если игрок новый, кэшируем его и создаём событие входа
+          await this.serverDiscoveryCacheService.cachePlayer(
+            this.config.server.address,
+            newPlayer,
+            0,
+          );
+
+          const joinEvent = new JoinEventDto(
+            { ...this.config.server },
+            { target: newPlayer.name },
+          );
+          const eventKey = hashString(joinEvent.toString());
+          this.debouncer.emit(eventKey, joinEvent, (joinEvent) => {
+            this.eventEmitter.emit('join', joinEvent);
+          });
+        }
+
+        currentPlayers.set(id, newPlayer);
+      }
+
+      // Обработка вышедших игроков
+      for (const [id, player] of this.previousPlayers) {
+        if (!currentPlayers.has(id)) {
+          const leaveEvent = new LeaveEventDto(
+            { ...this.config.server },
+            { target: player.name },
+          );
+          const eventKey = hashString(leaveEvent.toString());
+          this.debouncer.emit(eventKey, leaveEvent, (leaveEvent) => {
+            this.eventEmitter.emit('leave', leaveEvent);
+          });
+
+          // Устанавливаем TTL для вышедшего игрока
+          await this.serverDiscoveryCacheService.updatePlayerTTL(
+            this.config.server.address,
+            player.name,
+            60,
+          );
+        }
+      }
+
+      // Обновляем состояние
+      this.previousPlayers = currentPlayers;
+    });
+
+    this.client.on('message', async (message: IMessage) => {
+      if (!this.connected) return;
+      const eventKey = hashString(message.toString());
 
       const { message: text } = message;
       const clientId = message?.client_id;
@@ -79,8 +205,11 @@ export class ObserverService {
         if (this.handleBanUntil(text)) return;
         if (this.handleBanWithMinutes(text)) return;
         if (this.handlePermanentBan(text)) return;
+        if (this.handlePlayerJoin(text)) return;
+        if (this.handlePlayerLeave(text)) return;
 
         // this.logger.verbose(text);
+
         this.debouncer.emit(eventKey, message, (event) => {
           this.eventEmitter.emit('chat.message.system', event);
         });
@@ -105,10 +234,56 @@ export class ObserverService {
     });
   }
 
+  async handlePlayerJoin(text: string) {
+    const playerJoin = text.match(playerJoinRegex);
+    if (playerJoin) {
+      return true;
+    }
+    return false;
+  }
+
+  async handlePlayerLeave(text: string) {
+    const playerJoin = text.match(playerJoinRegex);
+    if (playerJoin) {
+      return true;
+    }
+    return false;
+  }
+
+  private async cachePlayers() {
+    for (const { name, clan } of this.client.SnapshotUnpacker
+      .AllObjClientInfo) {
+      await this.serverDiscoveryCacheService.cachePlayer(
+        this.config.server.address,
+        new Player(name, clan),
+        0,
+      );
+    }
+  }
+
+  private async cachePlayer(name: string) {
+    console.log('cachePlayer', this.client.SnapshotUnpacker.AllObjClientInfo);
+
+    const client = this.client.SnapshotUnpacker.AllObjClientInfo.find(
+      (client) => client.name === name,
+    );
+
+    if (client) {
+      await this.serverDiscoveryCacheService.cachePlayer(
+        this.config.server.address,
+        new Player(client.name, client.clan),
+        0,
+      );
+    }
+  }
+
   async disconnect(): Promise<void> {
     if (this.client) {
       await this.client.Disconnect();
     }
+    await this.serverDiscoveryCacheService.clearCacheForServer(
+      this.config.server.address,
+    );
     this.connected = false;
   }
 
@@ -128,7 +303,8 @@ export class ObserverService {
           reason,
         },
       );
-      const eventKey = JSON.stringify(kickEvent);
+      const eventKey = hashString(kickEvent.toString());
+
       this.debouncer.emit(eventKey, kickEvent, (event) => {
         this.eventEmitter.emit('kick', event);
       });
@@ -146,7 +322,7 @@ export class ObserverService {
         target,
         reason: null,
       });
-      const eventKey = JSON.stringify(kickEvent);
+      const eventKey = hashString(kickEvent.toString());
       this.debouncer.emit(eventKey, kickEvent, (event) => {
         this.eventEmitter.emit('kick', event);
       });
@@ -162,14 +338,17 @@ export class ObserverService {
     if (voteSpectate) {
       const [, voter, target, reason] = voteSpectate;
 
-      const vote = new VoteEventDto(this.config.server, {
+      const voteEvent = new VoteEventDto(this.config.server, {
         target,
         voter,
         reason,
         type: VoteType.Spectate,
       });
 
-      this.eventEmitter.emit('vote.spectate', vote);
+      const eventKey = hashString(voteEvent.toString());
+      this.debouncer.emit(eventKey, voteEvent, (voteEvent) => {
+        this.eventEmitter.emit('vote.spectate', voteEvent);
+      });
 
       return true;
     }
@@ -181,14 +360,17 @@ export class ObserverService {
     if (voteBan) {
       const [, voter, target, reason] = voteBan;
 
-      const vote = new VoteEventDto(this.config.server, {
+      const voteEvent = new VoteEventDto(this.config.server, {
         target,
         voter,
         reason,
         type: VoteType.Ban,
       });
 
-      this.eventEmitter.emit('vote.ban', vote);
+      const eventKey = hashString(voteEvent.toString());
+      this.debouncer.emit(eventKey, voteEvent, (voteEvent) => {
+        this.eventEmitter.emit('vote.ban', voteEvent);
+      });
 
       return true;
     }
@@ -200,14 +382,17 @@ export class ObserverService {
     if (voteChangeOption) {
       const [, voter, target, reason] = voteChangeOption;
 
-      const vote = new VoteEventDto(this.config.server, {
+      const voteEvent = new VoteEventDto(this.config.server, {
         target,
         voter,
         reason,
         type: VoteType.Option,
       });
 
-      this.eventEmitter.emit('vote.changeOption', vote);
+      const eventKey = hashString(voteEvent.toString());
+      this.debouncer.emit(eventKey, voteEvent, (voteEvent) => {
+        this.eventEmitter.emit('vote.changeOption', voteEvent);
+      });
 
       return true;
     }
@@ -216,10 +401,14 @@ export class ObserverService {
 
   private handleVotePassed(text: string): boolean {
     if (text === 'Vote passed') {
-      const votingResult = new VoteResultEventDto(this.config.server, {
+      const voteResultEvent = new VoteResultEventDto(this.config.server, {
         success: true,
       });
-      this.eventEmitter.emit('vote.passed', votingResult);
+
+      const eventKey = hashString(voteResultEvent.toString());
+      this.debouncer.emit(eventKey, voteResultEvent, (voteResultEvent) => {
+        this.eventEmitter.emit('vote.passed', voteResultEvent);
+      });
 
       return true;
     }
@@ -228,10 +417,14 @@ export class ObserverService {
 
   private handleVoteFailed(text: string): boolean {
     if (text === 'Vote failed' || text.includes('canceled their vote')) {
-      const votingResult = new VoteResultEventDto(this.config.server, {
+      const voteResultEvent = new VoteResultEventDto(this.config.server, {
         success: false,
       });
-      this.eventEmitter.emit('vote.failed', votingResult);
+
+      const eventKey = hashString(voteResultEvent.toString());
+      this.debouncer.emit(eventKey, voteResultEvent, (voteResultEvent) => {
+        this.eventEmitter.emit('vote.failed', voteResultEvent);
+      });
 
       return true;
     }
@@ -249,7 +442,11 @@ export class ObserverService {
         target,
         until,
       });
-      this.eventEmitter.emit('ban', banEvent);
+
+      const eventKey = hashString(banEvent.toString());
+      this.debouncer.emit(eventKey, banEvent, (banEvent) => {
+        this.eventEmitter.emit('ban', banEvent);
+      });
 
       return true;
     }
@@ -262,7 +459,11 @@ export class ObserverService {
       const [, target, reason] = permanentBan;
 
       const banEvent = new BanEventDto(this.config.server, { reason, target });
-      this.eventEmitter.emit('ban', banEvent);
+
+      const eventKey = hashString(banEvent.toString());
+      this.debouncer.emit(eventKey, banEvent, (banEvent) => {
+        this.eventEmitter.emit('ban', banEvent);
+      });
 
       return true;
     }
@@ -280,7 +481,11 @@ export class ObserverService {
         target,
         until: parsedDate,
       });
-      this.eventEmitter.emit('ban', banEvent);
+
+      const eventKey = hashString(banEvent.toString());
+      this.debouncer.emit(eventKey, banEvent, (banEvent) => {
+        this.eventEmitter.emit('ban', banEvent);
+      });
 
       return true;
     }

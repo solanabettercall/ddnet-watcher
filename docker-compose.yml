@@ -1,11 +1,10 @@
 services:
   redis:
     container_name: cache
-    image: redis:7.4.2-alpine
+    image: redis/redis-stack:7.2.0-v14
     ports:
       - '${REDIS_PORT}:6379'
     restart: unless-stopped
-
   db:
     container_name: db
     image: postgres:14.15-alpine
@@ -30,8 +29,6 @@ services:
       PGADMIN_LISTEN_PORT: 8080
     ports:
       - '${PGADMIN_PORT}:8080'
-    volumes:
-      - ./servers.json:/pgadmin4/servers.json
 
 volumes:
   db:

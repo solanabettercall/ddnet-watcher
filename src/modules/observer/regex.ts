@@ -19,3 +19,6 @@ export const permanentBanRegex =
 
 export const banWithUntilRegex =
   /^'(.+)' has left the game \(You have been banned \((.+)\. Until (.+)\)\)$/;
+
+export const playerJoinRegex = /^'(.+)' entered and joined the game$/;
+export const playerLeaveRegex = /^'(.+)' has left the game$/;

@@ -21,12 +21,12 @@ export class ServerDiscoveryService {
 
   private parseAddress(addressString: string): Address {
     const parsed = parse(addressString);
-    const address = new Address();
 
     const parsedHost = ipaddr.parse(parsed.host!);
-    address.host = parsedHost.toNormalizedString();
-    address.port = parsed.port ? parseInt(String(parsed.port), 10) : 0;
-    address.scheme = parsed.scheme;
+    const host = parsedHost.toNormalizedString();
+    const port = parsed.port ? parseInt(String(parsed.port), 10) : 0;
+    const scheme = parsed.scheme;
+    const address = new Address(host, port, scheme);
 
     return address;
   }
@@ -52,11 +52,14 @@ export class ServerDiscoveryService {
           });
 
         if (parsedAddresses.length > 0) {
-          const server = new Server();
-          server.name = rawServer.info.name;
-          server.map = new MapInfo();
-          server.map.name = rawServer.info.map.name;
-          server.address = parsedAddresses[0];
+          const map = new MapInfo();
+          map.name = rawServer.info.map.name;
+          const address = parsedAddresses[0];
+          const server = new Server({
+            address: address,
+            map,
+            name: rawServer.info.name,
+          });
           return server;
         }
         return null;
@@ -85,19 +88,19 @@ export class ServerDiscoveryService {
           });
 
         if (parsedAddresses.length > 0) {
-          const server = new Server();
-          server.name = rawServer.info.name;
-          server.map = new MapInfo();
-          server.map.name = rawServer.info.map.name;
-          server.address = parsedAddresses[0];
-
-          const players: Player[] = rawServer.info.clients.map((client) => {
-            const player = new Player();
-            player.name = client.name;
-            player.clan = Clan.create(client.clan);
-
-            return player;
+          const name = rawServer.info.name;
+          const map = new MapInfo();
+          map.name = rawServer.info.map.name;
+          const address = parsedAddresses[0];
+          const server = new Server({
+            address,
+            map,
+            name,
           });
+
+          const players: Player[] = rawServer.info.clients.map(
+            (client) => new Player(client.name, client.clan),
+          );
 
           return {
             server,

@@ -18,6 +18,6 @@ export class BanEventDto extends BaseEventDto implements IBanEvent {
     const untilText = this.until
       ? `до ${this.until.toISOString()}`
       : 'навсегда';
-    return `[${this.server.address.host}:${this.server.address.port}] '${this.target}' забанен ${untilText} по причине: '${this.reason}'.`;
+    return `Игрок '${this.target}' забанен ${untilText} по причине: '${this.reason}'.`;
   }
 }

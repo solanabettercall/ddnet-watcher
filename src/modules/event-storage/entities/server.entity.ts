@@ -8,10 +8,11 @@ import {
 } from 'typeorm';
 import { Address } from './address.entity';
 import { MapInfo } from './map.entity';
+import { IServerContext } from 'src/modules/observer/interfaces/server-context.interface';
 
 @Entity('servers')
 @Unique(['address', 'map'])
-export class Server {
+export class Server implements IServerContext {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
@@ -29,4 +30,8 @@ export class Server {
     unique: false,
   })
   name: string;
+
+  constructor(dto: IServerContext) {
+    Object.assign(this, dto);
+  }
 }

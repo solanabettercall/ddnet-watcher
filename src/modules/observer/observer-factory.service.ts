@@ -8,6 +8,7 @@ import { ServerDiscoveryCacheService } from '../server-discovery/server-discover
 import { ObserverFactoryServiceConfigDto } from './dto/observer-factory-service-config.dto';
 import { Server } from '../event-storage/entities/server.entity';
 import { MapInfo } from '../event-storage/entities/map.entity';
+import { ServerDiscoveryService } from '../server-discovery/server-discovery.service';
 
 @Injectable()
 export class ObserverFactoryService {
@@ -24,22 +25,33 @@ export class ObserverFactoryService {
     });
 
     if (!server) {
-      const server = new Server();
-      server.address = new Address();
-      server.address.host = config.address.host;
-      server.address.port = config.address.port;
-      server.address.scheme = 'tw-0.7+udp';
-      server.map = new MapInfo();
+      const { host, port } = config.address;
+      const address = new Address(host, port);
+      const map = new MapInfo();
 
-      return new ObserverService(this.eventEmitter, {
-        server,
-        botName: config.botName,
+      const server = new Server({
+        address,
+        map,
+        name: 'Unknown',
       });
+
+      return new ObserverService(
+        this.eventEmitter,
+        {
+          server,
+          botName: config.botName,
+        },
+        this.serverDiscoveryCacheService,
+      );
     }
 
-    return new ObserverService(this.eventEmitter, {
-      server,
-      botName: config.botName,
-    });
+    return new ObserverService(
+      this.eventEmitter,
+      {
+        server,
+        botName: config.botName,
+      },
+      this.serverDiscoveryCacheService,
+    );
   }
 }

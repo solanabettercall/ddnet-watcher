@@ -13,7 +13,6 @@ import { ServerDiscoveryModule } from '../server-discovery/server-discovery.modu
 
 @Module({
   imports: [
-    ServerDiscoveryModule,
     TypeOrmModule.forFeature([
       Address,
       Ban,
@@ -26,5 +25,6 @@ import { ServerDiscoveryModule } from '../server-discovery/server-discovery.modu
     ]),
   ],
   providers: [EventStorageService],
+  exports: [EventStorageService],
 })
 export class EventStorageModule {}

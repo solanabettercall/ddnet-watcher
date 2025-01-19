@@ -5,18 +5,52 @@ import { BanEventDto } from './dto/events/ban-event.dto';
 import { VoteEventDto } from './dto/events/vote-event.dto';
 import { VoteResultEventDto } from './dto/events/vote-result-event.dto';
 import { IMessage } from 'src/lib/client';
+import { ServerDiscoveryCacheService } from '../server-discovery/server-discovery-cache.service';
+import { EventStorageService } from '../event-storage/event-storage.service';
+import { Vote } from '../event-storage/entities/vote.entity';
+import { Server } from '../event-storage/entities/server.entity';
+import { JoinEventDto } from './dto/events/join-event.dto';
+import { LeaveEventDto } from './dto/events/leave-event.dto';
+import { PlayerUpdateEventDto } from './dto/events/player-update-event.dto';
 
 @Injectable()
 export class EventListenerService {
   private readonly logger = new Logger(EventListenerService.name);
 
-  @OnEvent('kick')
-  handleKick(event: KickEventDto) {
+  constructor(
+    private readonly serverDiscoveryCacheService: ServerDiscoveryCacheService,
+    private readonly eventStorageService: EventStorageService,
+  ) {}
+
+  @OnEvent('kick', { async: true })
+  async handleKick(event: KickEventDto) {
     this.logger.debug(event);
   }
 
-  @OnEvent('vote.spectate')
-  handleVoteSpectate(event: VoteEventDto) {
+  @OnEvent('vote.spectate', { async: true })
+  async handleVoteSpectate(event: VoteEventDto) {
+    console.log(event);
+    const vote = new Vote();
+    vote.server = new Server(event.server);
+
+    Object.assign(vote, event);
+
+    const cachedTargetPlayer =
+      await this.serverDiscoveryCacheService.getCachedPlayer(
+        vote.server.address,
+        event.target,
+      );
+
+    const cachedVoterPlayer =
+      await this.serverDiscoveryCacheService.getCachedPlayer(
+        vote.server.address,
+        event.voter,
+      );
+
+    vote.target = cachedTargetPlayer;
+    vote.voter = cachedVoterPlayer;
+
+    await this.eventStorageService.saveVote(vote);
     this.logger.debug(event);
   }
 
@@ -45,10 +79,21 @@ export class EventListenerService {
     this.logger.debug(event);
   }
 
+  @OnEvent('join')
+  handleJoin(event: JoinEventDto) {
+    this.logger.debug(event);
+  }
+
+  @OnEvent('leave')
+  handleLeave(event: LeaveEventDto) {
+    this.logger.debug(event);
+  }
+
   @OnEvent('chat.message.player')
   handleChatMessagePlayer(event: IMessage) {
     const name = event?.author?.ClientInfo?.name;
     const message = event.message;
+
     if (name) this.logger.log(`${name}: ${message}`);
     else this.logger.log(message);
   }
@@ -56,5 +101,10 @@ export class EventListenerService {
   @OnEvent('chat.message.system')
   handleChatMessageSystem(event: IMessage) {
     this.logger.verbose(event.message);
+  }
+
+  @OnEvent('player.update')
+  handlePlayerUpdate(event: PlayerUpdateEventDto) {
+    this.logger.verbose(event);
   }
 }
