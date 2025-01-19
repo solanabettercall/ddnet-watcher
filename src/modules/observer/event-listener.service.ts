@@ -29,26 +29,10 @@ export class EventListenerService {
 
   @OnEvent('vote.spectate', { async: true })
   async handleVoteSpectate(event: VoteEventDto) {
-    console.log(event);
     const vote = new Vote();
     vote.server = new Server(event.server);
 
     Object.assign(vote, event);
-
-    const cachedTargetPlayer =
-      await this.serverDiscoveryCacheService.getCachedPlayer(
-        vote.server.address,
-        event.target,
-      );
-
-    const cachedVoterPlayer =
-      await this.serverDiscoveryCacheService.getCachedPlayer(
-        vote.server.address,
-        event.voter,
-      );
-
-    vote.target = cachedTargetPlayer;
-    vote.voter = cachedVoterPlayer;
 
     await this.eventStorageService.saveVote(vote);
     this.logger.debug(event);

@@ -152,7 +152,7 @@ export class ObserverService {
 
           const joinEvent = new JoinEventDto(
             { ...this.config.server },
-            { target: newPlayer.name },
+            { target: newPlayer },
           );
           const eventKey = hashString(joinEvent.toString());
           this.debouncer.emit(eventKey, joinEvent, (joinEvent) => {
@@ -168,7 +168,7 @@ export class ObserverService {
         if (!currentPlayers.has(id)) {
           const leaveEvent = new LeaveEventDto(
             { ...this.config.server },
-            { target: player.name },
+            { target: player },
           );
           const eventKey = hashString(leaveEvent.toString());
           this.debouncer.emit(eventKey, leaveEvent, (leaveEvent) => {
@@ -195,18 +195,18 @@ export class ObserverService {
       const { message: text } = message;
       const clientId = message?.client_id;
       if (clientId === -1) {
-        if (this.handleKickWithReason(text)) return;
-        if (this.handleKickWithoutReason(text)) return;
-        if (this.handleVoteSpectate(text)) return;
-        if (this.handleVoteBan(text)) return;
-        if (this.handleVoteChangeOption(text)) return;
+        if (await this.handleKickWithReason(text)) return;
+        if (await this.handleKickWithoutReason(text)) return;
+        if (await this.handleVoteSpectate(text)) return;
+        if (await this.handleVoteBan(text)) return;
+        if (await this.handleVoteChangeOption(text)) return;
         if (this.handleVotePassed(text)) return;
         if (this.handleVoteFailed(text)) return;
-        if (this.handleBanUntil(text)) return;
-        if (this.handleBanWithMinutes(text)) return;
-        if (this.handlePermanentBan(text)) return;
-        if (this.handlePlayerJoin(text)) return;
-        if (this.handlePlayerLeave(text)) return;
+        if (await this.handleBanUntil(text)) return;
+        if (await this.handleBanWithMinutes(text)) return;
+        if (await this.handlePermanentBan(text)) return;
+        if (await this.handlePlayerJoin(text)) return;
+        if (await this.handlePlayerLeave(text)) return;
 
         // this.logger.verbose(text);
 
@@ -292,10 +292,18 @@ export class ObserverService {
   }
 
   //#region Кик
-  private handleKickWithReason(text: string): boolean {
+  private async handleKickWithReason(text: string): Promise<boolean> {
     const kickWithReason = text.match(kickWithReasonRegex);
     if (kickWithReason) {
-      const [, target, reason] = kickWithReason;
+      const [, targetName, reason] = kickWithReason;
+
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
+
       const kickEvent = new KickEventDto(
         { ...this.config.server },
         {
@@ -314,10 +322,17 @@ export class ObserverService {
     return false;
   }
 
-  private handleKickWithoutReason(text: string): boolean {
+  private async handleKickWithoutReason(text: string): Promise<boolean> {
     const kickWithoutReason = text.match(kickWithoutReasonRegex);
     if (kickWithoutReason) {
-      const [, target] = kickWithoutReason;
+      const [, targetName] = kickWithoutReason;
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
+
       const kickEvent = new KickEventDto(this.config.server, {
         target,
         reason: null,
@@ -333,10 +348,20 @@ export class ObserverService {
   //#endregion
 
   //#region Голосования
-  private handleVoteSpectate(text: string): boolean {
+  private async handleVoteSpectate(text: string): Promise<boolean> {
     const voteSpectate = text.match(voteSpectateRegex);
     if (voteSpectate) {
-      const [, voter, target, reason] = voteSpectate;
+      const [, voterName, targetName, reason] = voteSpectate;
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
+      const voter = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        voterName,
+      );
 
       const voteEvent = new VoteEventDto(this.config.server, {
         target,
@@ -355,10 +380,20 @@ export class ObserverService {
     return false;
   }
 
-  private handleVoteBan(text: string): boolean {
+  private async handleVoteBan(text: string): Promise<boolean> {
     const voteBan = text.match(voteBanRegex);
     if (voteBan) {
-      const [, voter, target, reason] = voteBan;
+      const [, voterName, targetName, reason] = voteBan;
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
+      const voter = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        voterName,
+      );
 
       const voteEvent = new VoteEventDto(this.config.server, {
         target,
@@ -377,13 +412,20 @@ export class ObserverService {
     return false;
   }
 
-  private handleVoteChangeOption(text: string): boolean {
+  private async handleVoteChangeOption(text: string): Promise<boolean> {
     const voteChangeOption = text.match(voteChangeOptionRegex);
     if (voteChangeOption) {
-      const [, voter, target, reason] = voteChangeOption;
+      const [, voterName, option, reason] = voteChangeOption;
+
+      const address = this.config.server.address;
+
+      const voter = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        voterName,
+      );
 
       const voteEvent = new VoteEventDto(this.config.server, {
-        target,
+        option,
         voter,
         reason,
         type: VoteType.Option,
@@ -432,11 +474,19 @@ export class ObserverService {
   }
   //#endregion
 
-  private handleBanWithMinutes(text: string) {
+  private async handleBanWithMinutes(text: string): Promise<boolean> {
     const banWithMinutes = text.match(banWithMinutesRegex);
     if (banWithMinutes) {
-      const [, target, minutes, reason] = banWithMinutes;
+      const [, targetName, minutes, reason] = banWithMinutes;
       const until = parseDateFromMinutes(minutes);
+
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
+
       const banEvent = new BanEventDto(this.config.server, {
         reason,
         target,
@@ -453,10 +503,17 @@ export class ObserverService {
     return false;
   }
 
-  private handlePermanentBan(text: string) {
+  private async handlePermanentBan(text: string): Promise<boolean> {
     const permanentBan = text.match(permanentBanRegex);
     if (permanentBan) {
-      const [, target, reason] = permanentBan;
+      const [, targetName, reason] = permanentBan;
+
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
 
       const banEvent = new BanEventDto(this.config.server, { reason, target });
 
@@ -470,11 +527,17 @@ export class ObserverService {
     return false;
   }
 
-  private handleBanUntil(text: string) {
+  private async handleBanUntil(text: string): Promise<boolean> {
     const banUntil = text.match(banWithUntilRegex);
     if (banUntil) {
-      const [, target, reason, until] = banUntil;
+      const [, targetName, reason, until] = banUntil;
       const parsedDate = parseDate(until);
+      const address = this.config.server.address;
+
+      const target = await this.serverDiscoveryCacheService.getCachedPlayer(
+        address,
+        targetName,
+      );
 
       const banEvent = new BanEventDto(this.config.server, {
         reason,

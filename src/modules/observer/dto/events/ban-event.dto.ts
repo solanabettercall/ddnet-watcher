@@ -1,9 +1,10 @@
+import { Player } from 'src/modules/event-storage/entities/player.entity';
 import { BaseEventDto } from '../../abstract/base-event.dto';
 import { IBanEvent } from '../../interfaces/ban-event.interface';
 import { IServerContext } from '../../interfaces/server-context.interface';
 
 export class BanEventDto extends BaseEventDto implements IBanEvent {
-  target: string;
+  target: Player;
 
   until?: Date;
 
@@ -18,6 +19,6 @@ export class BanEventDto extends BaseEventDto implements IBanEvent {
     const untilText = this.until
       ? `до ${this.until.toISOString()}`
       : 'навсегда';
-    return `Игрок '${this.target}' забанен ${untilText} по причине: '${this.reason}'.`;
+    return `Игрок '${this.target.name}' забанен ${untilText} по причине: '${this.reason}'.`;
   }
 }

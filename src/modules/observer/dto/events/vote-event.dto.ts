@@ -1,3 +1,4 @@
+import { Player } from 'src/modules/event-storage/entities/player.entity';
 import { BaseEventDto } from 'src/modules/observer/abstract/base-event.dto';
 import { IServerContext } from 'src/modules/observer/interfaces/server-context.interface';
 import {
@@ -11,34 +12,37 @@ export class VoteEventDto extends BaseEventDto implements IVoteEvent {
     super(server);
     Object.assign(this, dto);
   }
+  voter: Player;
+  target?: Player;
+  option?: string;
   reason: string | null;
-  voter: string;
-  target: string;
   type: VoteType;
 
   toString(): string {
+    const targetName = this.target?.name || this.option;
+    const voterName = this.voter.name;
     switch (this.type) {
       case VoteType.Ban: {
         if (this.reason === 'No reason given' || !this.reason) {
-          return `'${this.voter}' проголосовал за исключение '${this.target}'.`;
+          return `'${voterName}' проголосовал за исключение '${targetName}'.`;
         } else {
-          return `'${this.voter}' проголосовал за исключение '${this.target}'. По причине: '${this.reason}'`;
+          return `'${voterName}' проголосовал за исключение '${targetName}'. По причине: '${this.reason}'`;
         }
       }
 
       case VoteType.Spectate: {
         if (this.reason === 'No reason given' || !this.reason) {
-          return `'${this.voter}' проголосовал за перевод в наблюдатели '${this.target}'.`;
+          return `'${voterName}' проголосовал за перевод в наблюдатели '${targetName}'.`;
         } else {
-          return `'${this.voter}' проголосовал за перевод в наблюдатели '${this.target}'. По причине: '${this.reason}'`;
+          return `'${voterName}' проголосовал за перевод в наблюдатели '${targetName}'. По причине: '${this.reason}'`;
         }
       }
 
       case VoteType.Option: {
         if (this.reason === 'No reason given' || !this.reason) {
-          return `'${this.voter}' проголосовал за '${this.target}'.`;
+          return `'${voterName}' проголосовал за '${targetName}'.`;
         } else {
-          return `'${this.voter}' проголосовал за '${this.target}'. По причине: '${this.reason}'`;
+          return `'${voterName}' проголосовал за '${targetName}'. По причине: '${this.reason}'`;
         }
       }
     }

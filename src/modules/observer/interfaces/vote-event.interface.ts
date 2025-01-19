@@ -1,3 +1,5 @@
+import { Player } from 'src/modules/event-storage/entities/player.entity';
+
 export enum VoteType {
   Option = 'option',
   Ban = 'kick',
@@ -5,8 +7,9 @@ export enum VoteType {
 }
 
 export interface IVoteEvent {
-  voter: string;
-  target: string;
+  voter: Player;
+  target?: Player;
+  option?: string;
   reason: string | null;
 
   type: VoteType;

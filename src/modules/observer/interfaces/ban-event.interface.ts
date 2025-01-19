@@ -1,5 +1,7 @@
+import { Player } from 'src/modules/event-storage/entities/player.entity';
+
 export interface IBanEvent {
-  target: string;
+  target: Player;
 
   until?: Date;
 
