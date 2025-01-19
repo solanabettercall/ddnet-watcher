@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Server } from './server.entity';
 import { Player } from './player.entity';
+import { IKickEvent } from 'src/modules/observer/interfaces/kick-event.interface';
 
 @Entity('kicks')
 export class Kick {
@@ -45,4 +46,8 @@ export class Kick {
   @ManyToOne(() => Server, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'server_id' })
   server: Server;
+
+  constructor(dto: IKickEvent) {
+    Object.assign(this, dto);
+  }
 }

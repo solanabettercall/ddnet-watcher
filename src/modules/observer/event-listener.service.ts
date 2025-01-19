@@ -13,6 +13,7 @@ import { JoinEventDto } from './dto/events/join-event.dto';
 import { LeaveEventDto } from './dto/events/leave-event.dto';
 import { PlayerUpdateEventDto } from './dto/events/player-update-event.dto';
 import { Ban } from '../event-storage/entities/ban.entity';
+import { Kick } from '../event-storage/entities/kick.entity';
 
 @Injectable()
 export class EventListenerService {
@@ -25,6 +26,9 @@ export class EventListenerService {
 
   @OnEvent('kick', { async: true })
   async handleKick(event: KickEventDto) {
+    const kick = new Kick(event);
+    kick.server = new Server(event.server);
+    await this.eventStorageService.saveKick(kick);
     this.logger.debug(event);
   }
 

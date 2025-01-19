@@ -82,24 +82,25 @@ export class EventStorageService implements OnApplicationBootstrap {
     return this.voteRepository.save<Vote>(vote);
   }
 
-  async saveKick(dto: Kick) {}
+  async saveKick(kick: Kick) {
+    kick.target = await this.findOrCreatePlayer(kick.target);
+    kick.server = await this.findOrCreateServer(kick.server);
+
+    return this.kickRepository.save<Kick>(kick);
+  }
 
   private async findOrCreatePlayer(player: Player): Promise<Player> {
     const clan: Clan | null = await this.findOrCreateClan(player?.clan?.name);
 
-    console.log(clan);
-
     let existingPlayer = await this.playerRepository.findOne({
       where: { name: player.name, clan: { id: clan ? clan.id : IsNull() } },
     });
-    console.log('existingPlayer', existingPlayer);
 
     if (!existingPlayer) {
       existingPlayer = this.playerRepository.create({
         ...player,
         clan: clan,
       });
-      console.log('existingPlayer create', existingPlayer);
       await this.playerRepository.save(existingPlayer);
     }
 
