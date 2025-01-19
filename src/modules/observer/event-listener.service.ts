@@ -29,7 +29,7 @@ export class EventListenerService {
 
   @OnEvent('vote.spectate', { async: true })
   async handleVoteSpectate(event: VoteEventDto) {
-    const vote = new Vote();
+    const vote = new Vote(event);
     vote.server = new Server(event.server);
 
     Object.assign(vote, event);

@@ -16,11 +16,11 @@ export class Server implements IServerContext {
   @PrimaryGeneratedColumn('uuid')
   id: number;
 
-  @ManyToOne(() => Address, { nullable: false, eager: true })
+  @ManyToOne(() => Address, { nullable: false, eager: true, cascade: true })
   @JoinColumn({ name: 'address_id' })
   address: Address;
 
-  @ManyToOne(() => MapInfo, { nullable: false, eager: true })
+  @ManyToOne(() => MapInfo, { nullable: false, eager: true, cascade: true })
   @JoinColumn({ name: 'map_id' })
   map: MapInfo;
 

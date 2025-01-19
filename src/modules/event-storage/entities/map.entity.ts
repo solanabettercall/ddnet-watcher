@@ -11,4 +11,8 @@ export class MapInfo {
     unique: true,
   })
   name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
 }

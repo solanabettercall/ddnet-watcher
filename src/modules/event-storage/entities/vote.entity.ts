@@ -6,8 +6,12 @@ import {
   Column,
 } from 'typeorm';
 import { Player } from './player.entity';
-import { VoteType } from 'src/modules/observer/interfaces/vote-event.interface';
+import {
+  IVoteEvent,
+  VoteType,
+} from 'src/modules/observer/interfaces/vote-event.interface';
 import { Server } from './server.entity';
+import { IServerContext } from 'src/modules/observer/interfaces/server-context.interface';
 
 @Entity('votes')
 export class Vote {
@@ -18,6 +22,7 @@ export class Vote {
     nullable: false,
     eager: true,
     onDelete: 'CASCADE',
+    cascade: true,
   })
   @JoinColumn({ name: 'voter_id' })
   voter: Player;
@@ -26,6 +31,7 @@ export class Vote {
     nullable: true,
     eager: true,
     onDelete: 'CASCADE',
+    cascade: true,
   })
   @JoinColumn({ name: 'target_id' })
   target?: Player;
@@ -57,9 +63,17 @@ export class Vote {
     nullable: false,
     default: false,
   })
-  isSuccess: boolean;
+  isSuccess: boolean = false;
 
-  @ManyToOne(() => Server, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => Server, {
+    nullable: false,
+    onDelete: 'CASCADE',
+    cascade: true,
+  })
   @JoinColumn({ name: 'server_id' })
   server: Server;
+
+  constructor(dto: IVoteEvent & { server: IServerContext }) {
+    Object.assign(this, dto);
+  }
 }

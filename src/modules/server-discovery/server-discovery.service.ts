@@ -52,7 +52,7 @@ export class ServerDiscoveryService {
           });
 
         if (parsedAddresses.length > 0) {
-          const map = new MapInfo();
+          const map = new MapInfo('Unknown');
           map.name = rawServer.info.map.name;
           const address = parsedAddresses[0];
           const server = new Server({
@@ -89,7 +89,7 @@ export class ServerDiscoveryService {
 
         if (parsedAddresses.length > 0) {
           const name = rawServer.info.name;
-          const map = new MapInfo();
+          const map = new MapInfo('Unknown');
           map.name = rawServer.info.map.name;
           const address = parsedAddresses[0];
           const server = new Server({

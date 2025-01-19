@@ -27,7 +27,7 @@ export class ObserverFactoryService {
     if (!server) {
       const { host, port } = config.address;
       const address = new Address(host, port);
-      const map = new MapInfo();
+      const map = new MapInfo('Unknown');
 
       const server = new Server({
         address,

@@ -21,7 +21,7 @@ export class Player {
   })
   name: string;
 
-  @ManyToOne(() => Clan, { nullable: true, eager: true })
+  @ManyToOne(() => Clan, { nullable: true, eager: true, cascade: true })
   @JoinColumn({ name: 'clan_id' })
   clan?: Clan;
 
