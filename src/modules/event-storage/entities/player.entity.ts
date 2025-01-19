@@ -5,6 +5,8 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Clan } from './clan.entity';
 
@@ -24,6 +26,19 @@ export class Player {
   @ManyToOne(() => Clan, { nullable: true, eager: true, cascade: true })
   @JoinColumn({ name: 'clan_id' })
   clan?: Clan;
+
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamp',
+  })
+  updatedAt: Date;
 
   constructor(name: string, clan?: string) {
     this.name = name;

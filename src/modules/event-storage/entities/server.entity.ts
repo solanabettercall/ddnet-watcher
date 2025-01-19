@@ -5,6 +5,8 @@ import {
   ManyToOne,
   Unique,
   Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Address } from './address.entity';
 import { MapInfo } from './map.entity';
@@ -30,6 +32,19 @@ export class Server implements IServerContext {
     unique: false,
   })
   name: string;
+
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamp',
+  })
+  updatedAt: Date;
 
   constructor(dto: IServerContext) {
     Object.assign(this, dto);

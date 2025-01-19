@@ -4,6 +4,8 @@ import {
   ManyToOne,
   JoinColumn,
   Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Player } from './player.entity';
 import {
@@ -72,6 +74,19 @@ export class Vote {
   })
   @JoinColumn({ name: 'server_id' })
   server: Server;
+
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamp',
+  })
+  updatedAt: Date;
 
   constructor(dto: IVoteEvent & { server: IServerContext }) {
     Object.assign(this, dto);

@@ -4,6 +4,8 @@ import {
   Column,
   JoinColumn,
   ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Server } from './server.entity';
 import { Player } from './player.entity';
@@ -26,6 +28,19 @@ export class Kick {
     nullable: true,
   })
   reason?: string;
+
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamp',
+  })
+  updatedAt: Date;
 
   @ManyToOne(() => Server, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'server_id' })
