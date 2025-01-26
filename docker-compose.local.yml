@@ -5,6 +5,8 @@ services:
     ports:
       - '${REDIS_PORT}:6379'
     restart: unless-stopped
+    volumes:
+      - cache:/data
   db:
     container_name: db
     image: postgres:14.15-alpine
@@ -33,3 +35,4 @@ services:
 volumes:
   db:
   app:
+  cache:

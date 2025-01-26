@@ -32,7 +32,6 @@ export class ServerDiscoveryCacheService implements OnApplicationBootstrap {
 
   constructor(
     private readonly serverDiscoveryService: ServerDiscoveryService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async onApplicationBootstrap() {
@@ -78,15 +77,9 @@ export class ServerDiscoveryCacheService implements OnApplicationBootstrap {
     if (ttl > 0) {
       // Если TTL больше 0, задаём время жизни
       await this.redis.set(playerKey, playerData, 'EX', ttl);
-      this.logger.debug(
-        `Игрок ${player.name} кэширован с TTL: ${ttl} (ключ: ${playerKey})`,
-      );
     } else {
       // Если TTL равно 0, сохраняем без ограничения времени жизни
       await this.redis.set(playerKey, playerData);
-      this.logger.debug(
-        `Игрок ${player.name} кэширован с TTL: ${ttl} (ключ: ${playerKey})`,
-      );
     }
   }
 
