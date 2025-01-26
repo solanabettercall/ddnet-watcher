@@ -31,7 +31,7 @@ export class ServerDiscoveryService {
     return address;
   }
 
-  private async getServers(): Promise<Server[]> {
+  public async getServers(): Promise<Server[]> {
     const rawServers = await this.serverDiscoveryApiService.fetchServers();
 
     return rawServers

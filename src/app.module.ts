@@ -16,11 +16,13 @@ import { Vote } from './modules/event-storage/entities/vote.entity';
 import { MapInfo } from './modules/event-storage/entities/map.entity';
 import { ServerDiscoveryModule } from './modules/server-discovery/server-discovery.module';
 import { EventStorageModule } from './modules/event-storage/event-storage.module';
+import { ObserverConnnecterModule } from './modules/observer-connnecter/observer-connnecter.module';
 
 config();
 
 @Module({
   imports: [
+    ObserverConnnecterModule,
     ObserverModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({

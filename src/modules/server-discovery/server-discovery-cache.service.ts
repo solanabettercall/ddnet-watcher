@@ -36,7 +36,7 @@ export class ServerDiscoveryCacheService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    // await this.cacheServers();
+    await this.cacheServers();
   }
 
   async clearCacheForServer(address: Address): Promise<void> {
