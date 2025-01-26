@@ -29,9 +29,9 @@ export const formatVoteMessage = (vote: IVoteFullInfo): string => {
 📢 <b>Голосование:</b> ${voteType}
 ❓ <b>Причина:</b> ${vote.reason || 'Не указана'}
 
-${voterInfo}
-
 ${targetInfo}
+
+${voterInfo}
 
 🌐 <b>Сервер:</b> <code>${serverUrl}</code>
   `.trim();
