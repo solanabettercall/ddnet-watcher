@@ -366,6 +366,21 @@ export class ObserverService {
         voterName,
       );
 
+      if (!voter || !target) {
+        this.logger.warn(
+          'Не удалось обработать событие голосования за перевод в наблюдатели',
+          {
+            text,
+            target,
+            targetName,
+            voter,
+            voterName,
+            address,
+          },
+        );
+        return;
+      }
+
       const voteEvent = new VoteEventDto(this.config.server, {
         target,
         voter,
@@ -397,6 +412,21 @@ export class ObserverService {
         address,
         voterName,
       );
+
+      if (!voter || !target) {
+        this.logger.warn(
+          'Не удалось обработать событие голосования за перевод в наблюдатели',
+          {
+            text,
+            target,
+            targetName,
+            voter,
+            voterName,
+            address,
+          },
+        );
+        return;
+      }
 
       const voteEvent = new VoteEventDto(this.config.server, {
         target,
