@@ -12,7 +12,6 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    return;
     const servers: Server[] = await this.serverDiscoveryService.getServers();
 
     const serverNames = [
