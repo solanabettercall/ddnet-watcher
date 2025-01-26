@@ -10,13 +10,13 @@ export class AppService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    // await this.observerManagerService.addObserver({
-    //   botName: 'rock',
-    //   address: {
-    //     host: '176.98.40.225',
-    //     port: 8303,
-    //   },
-    // });
+    await this.observerManagerService.addObserver({
+      botName: 'rock',
+      address: {
+        host: '176.98.40.225',
+        port: 8303,
+      },
+    });
     // await this.observerManagerService.addObserver({
     //   botName: 'rock',
     //   address: {

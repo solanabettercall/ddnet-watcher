@@ -17,6 +17,7 @@ import { MapInfo } from './modules/event-storage/entities/map.entity';
 import { ServerDiscoveryModule } from './modules/server-discovery/server-discovery.module';
 import { EventStorageModule } from './modules/event-storage/event-storage.module';
 import { ObserverConnnecterModule } from './modules/observer-connnecter/observer-connnecter.module';
+import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
 
 config();
 
@@ -52,6 +53,7 @@ config();
     }),
     ServerDiscoveryModule,
     EventStorageModule,
+    TelegramBotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

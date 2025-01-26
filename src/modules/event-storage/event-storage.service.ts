@@ -4,18 +4,134 @@ import { IsNull, Repository } from 'typeorm';
 import { Ban } from './entities/ban.entity';
 import { Kick } from './entities/kick.entity';
 import { Vote } from './entities/vote.entity';
-import { BanEventDto } from '../observer/dto/events/ban-event.dto';
-import { ServerDiscoveryCacheService } from '../server-discovery/server-discovery-cache.service';
 import { Player } from './entities/player.entity';
-import { VoteEventDto } from '../observer/dto/events/vote-event.dto';
 import { Server } from './entities/server.entity';
 import { Address } from './entities/address.entity';
 import { MapInfo } from './entities/map.entity';
-import { VoteType } from '../observer/interfaces/vote-event.interface';
 import { Clan } from './entities/clan.entity';
+import { IVoteFullInfo } from './dto/vote-full-info.dto';
 
 @Injectable()
 export class EventStorageService implements OnApplicationBootstrap {
+  async getVoteFull(id: string): Promise<IVoteFullInfo> {
+    const result = await this.voteRepository
+      .createQueryBuilder('vote')
+      .leftJoinAndSelect('vote.voter', 'voter')
+      .leftJoinAndSelect('vote.target', 'target')
+      .leftJoinAndSelect('vote.server', 'server')
+      .leftJoinAndSelect('voter.clan', 'voterClan')
+      .leftJoinAndSelect('target.clan', 'targetClan')
+      .leftJoinAndSelect('server.address', 'address')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.voter_id = vote.voter_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 HOUR'");
+      }, 'votes_last_hour')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.voter_id = vote.voter_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 DAY'");
+      }, 'votes_last_day')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.voter_id = vote.voter_id');
+      }, 'votes_all_time')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = vote.target_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 HOUR'");
+      }, 'target_votes_last_hour')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = vote.target_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 DAY'");
+      }, 'target_votes_last_day')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = vote.target_id');
+      }, 'target_votes_all_time')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'ban_count')
+          .from(Ban, 'b')
+          .where('b.player_id = vote.voter_id');
+      }, 'voter_ban_count')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select(
+            'ROUND(SUM(EXTRACT(EPOCH FROM (b.until - b.created_at))) / 3600.0, 2)',
+            'ban_duration_hours',
+          )
+          .from(Ban, 'b')
+          .where('b.player_id = vote.voter_id');
+      }, 'voter_ban_duration')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'ban_count')
+          .from(Ban, 'b')
+          .where('b.player_id = vote.target_id');
+      }, 'target_ban_count')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select(
+            'ROUND(SUM(EXTRACT(EPOCH FROM (b.until - b.created_at))) / 3600.0, 2)',
+            'ban_duration_hours',
+          )
+          .from(Ban, 'b')
+          .where('b.player_id = vote.target_id');
+      }, 'target_ban_duration')
+      .where('vote.id = :id', { id })
+      .getRawAndEntities();
+
+    if (!result || !result.entities || result.entities.length === 0) {
+      throw new Error(`Vote with id ${id} not found`);
+    }
+
+    const vote = result.entities[0];
+    const raw = result.raw[0];
+
+    const voter = vote.voter;
+    const target = vote.target;
+
+    return {
+      ...vote,
+      voter: {
+        ...voter,
+        numberOfVotes: {
+          lastHour: parseInt(raw.votes_last_hour, 10),
+          lastDay: parseInt(raw.votes_last_day, 10),
+          allTime: parseInt(raw.votes_all_time, 10),
+        },
+        totalBanCount: parseInt(raw.voter_ban_count, 10),
+        totalBanDuration: parseFloat(raw.voter_ban_duration) || 0, // Если значение null, возвращается 0
+      },
+      target: target
+        ? {
+            ...target,
+            numberOfVotes: {
+              lastHour: parseInt(raw.target_votes_last_hour, 10),
+              lastDay: parseInt(raw.target_votes_last_day, 10),
+              allTime: parseInt(raw.target_votes_all_time, 10),
+            },
+            totalBanCount: parseInt(raw.target_ban_count, 10),
+            totalBanDuration: parseFloat(raw.target_ban_duration) || 0, // Если значение null, возвращается 0
+          }
+        : undefined,
+    };
+  }
+
   private readonly logger: Logger = new Logger(EventStorageService.name);
 
   constructor(
@@ -57,7 +173,6 @@ export class EventStorageService implements OnApplicationBootstrap {
     vote.server = server;
 
     this.logger.debug('Сохранили голосование');
-    console.log(vote);
     return this.voteRepository.save<Vote>(vote);
   }
 

@@ -18,7 +18,7 @@ import { IServerContext } from 'src/modules/observer/interfaces/server-context.i
 @Entity('votes')
 export class Vote {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @ManyToOne(() => Player, {
     nullable: false,

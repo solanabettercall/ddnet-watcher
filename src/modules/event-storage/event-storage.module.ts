@@ -10,6 +10,7 @@ import { MapInfo } from './entities/map.entity';
 import { Player } from './entities/player.entity';
 import { Vote } from './entities/vote.entity';
 import { EventStorageController } from './event-storage.controller';
+import { TelegramBotModule } from '../telegram-bot/telegram-bot.module';
 
 @Module({
   imports: [
