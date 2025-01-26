@@ -186,7 +186,7 @@ export class ServerDiscoveryCacheService implements OnApplicationBootstrap {
     );
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   protected async cacheServers(): Promise<void> {
     const servers = await this.serverDiscoveryService.getServersWithPlayers();
 
