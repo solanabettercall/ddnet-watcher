@@ -9,7 +9,7 @@ import { Kick } from './entities/kick.entity';
 import { MapInfo } from './entities/map.entity';
 import { Player } from './entities/player.entity';
 import { Vote } from './entities/vote.entity';
-import { ServerDiscoveryModule } from '../server-discovery/server-discovery.module';
+import { EventStorageController } from './event-storage.controller';
 
 @Module({
   imports: [
@@ -26,5 +26,6 @@ import { ServerDiscoveryModule } from '../server-discovery/server-discovery.modu
   ],
   providers: [EventStorageService],
   exports: [EventStorageService],
+  controllers: [EventStorageController],
 })
 export class EventStorageModule {}

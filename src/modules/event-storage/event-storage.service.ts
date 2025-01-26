@@ -33,28 +33,7 @@ export class EventStorageService implements OnApplicationBootstrap {
     private serverRepository: Repository<Server>,
   ) {}
 
-  async onApplicationBootstrap() {
-    // const map = await this.findOrCreateMap(new MapInfo('Tutorial'));
-    // const address = await this.findOrCreateAddress(
-    //   new Address('176.98.40.225', 8303),
-    // );
-    // const server = await this.findOrCreateServer(
-    //   new Server({
-    //     address,
-    //     map,
-    //     name: 'Unknown',
-    //   }),
-    // );
-    // const target = await this.findOrCreatePlayer(new Player('aba', 'zzz4'));
-    // const vote = new Vote({
-    //   reason: null,
-    //   type: VoteType.Spectate,
-    //   target,
-    //   voter: new Player('foo', 'z'),
-    //   server,
-    // });
-    // return this.voteRepository.save<Vote>(vote);
-  }
+  async onApplicationBootstrap() {}
 
   async saveBan(ban: Ban) {
     console.log(ban);
@@ -190,5 +169,18 @@ export class EventStorageService implements OnApplicationBootstrap {
     }
 
     return existingClan;
+  }
+
+  async getLastVotes(): Promise<Vote[]> {
+    return this.voteRepository.find({
+      take: 10,
+      skip: 0,
+      order: {
+        createdAt: 'DESC',
+      },
+      relations: {
+        server: true,
+      },
+    });
   }
 }
