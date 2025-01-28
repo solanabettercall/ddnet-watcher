@@ -1,8 +1,10 @@
 import * as moment from 'moment';
 import { IBanFullInfo } from 'src/modules/event-storage/dto/ban-full-info.dto';
+import { getFormatedServerUrl, getServerUrl } from './server-url';
 
 export const formatBanMessage = (ban: IBanFullInfo): string => {
-  const serverUrl = `${ban.server.address.host}:${ban.server.address.port}`;
+  const { host, port } = ban.server.address;
+  const formatedServerUrl = getFormatedServerUrl(host, port);
 
   // Форматирование длительности в HH:MM:SS
   const formatBanDuration = (until: Date): string => {
@@ -52,6 +54,6 @@ ${targetInfo}
 
 ${banInfo}
 
-🌐 <b>Сервер:</b> <code>${serverUrl}</code>
+${formatedServerUrl}
   `.trim();
 };

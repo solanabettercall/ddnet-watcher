@@ -16,7 +16,7 @@ export class TelegramBotService implements OnModuleInit {
   private isEnabled = false;
 
   async onModuleInit() {
-    if (!this.votesChannelId) {
+    if (!this.votesChannelId || !this.bansChannelId) {
       this.logger.warn('Не задан ID канала телеграм');
       return;
     }

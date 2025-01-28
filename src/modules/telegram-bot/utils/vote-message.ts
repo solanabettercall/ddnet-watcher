@@ -1,7 +1,11 @@
 import { IVoteFullInfo } from 'src/modules/event-storage/dto/vote-full-info.dto';
 import { VoteType } from 'src/modules/observer/interfaces/vote-event.interface';
+import { getFormatedServerUrl } from './server-url';
 
 export const formatVoteMessage = (vote: IVoteFullInfo): string => {
+  const { host, port } = vote.server.address;
+  const formatedServerUrl = getFormatedServerUrl(host, port);
+
   const voteTypeMap = {
     [VoteType.Option]: '🗳️ Выбор',
     [VoteType.Ban]: '🚫 Исключение',
@@ -33,6 +37,6 @@ ${targetInfo}
 
 ${voterInfo}
 
-🌐 <b>Сервер:</b> <code>${serverUrl}</code>
+${formatedServerUrl}
   `.trim();
 };
