@@ -16,7 +16,7 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ObserverConnnecterService.name);
 
   async onApplicationBootstrap() {
-    const servers = await this.getTestServers();
+    const servers = await this.getKobraRusServers();
 
     for (const server of servers) {
       await this.observerManagerService.addObserver({
@@ -89,7 +89,7 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
       // Если бот еще не подключен к этому серверу и карта подходящая
       if (
         !this.observerManagerService.observers.has(key) &&
-        this.isTestMap(server.map.name)
+        this.isKobraRusMap(server.map.name)
       ) {
         this.logger.log(`Подключаем бота к серверу ${key}...`);
         await this.observerManagerService.addObserver({
