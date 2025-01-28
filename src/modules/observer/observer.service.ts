@@ -11,7 +11,6 @@ import {
   voteSpectateRegex,
   voteChangeOptionRegex,
   playerJoinRegex,
-  playerLeaveRegex,
 } from './regex';
 import { parseDate, parseDateFromMinutes } from 'src/utils/parse-date';
 import { BanEventDto } from './dto/events/ban-event.dto';
@@ -24,7 +23,6 @@ import { EventDebouncer } from './event-debouncer';
 import { DeltaItem, SnapshotItemTypes } from 'src/lib/enums_types/types';
 import { ServerDiscoveryCacheService } from '../server-discovery/server-discovery-cache.service';
 import { Player } from '../event-storage/entities/player.entity';
-import { Address } from '../event-storage/entities/address.entity';
 import { JoinEventDto } from './dto/events/join-event.dto';
 import { LeaveEventDto } from './dto/events/leave-event.dto';
 import { SnapshotItemIDs } from 'src/lib/enums_types/protocol';
@@ -211,27 +209,22 @@ export class ObserverService {
         if (await this.handlePlayerJoin(text)) return;
         if (await this.handlePlayerLeave(text)) return;
 
-        // this.logger.verbose(text);
-
         this.debouncer.emit(eventKey, message, (event) => {
           this.eventEmitter.emit('chat.message.system', event);
         });
       } else {
-        // this.eventsQueue.add(message, {
-        //   debounce: {
-        //     id: message.message,
-        //     ttl: 300,
-        //   },
-        // });
-
         this.debouncer.emit(eventKey, message, (event) => {
           this.eventEmitter.emit('chat.message.player', event);
         });
-        // this.logger.log(text);
       }
     });
 
+    this.client.on('map_details', (message) => {
+      this.config.server.map.name = message.map_name;
+    });
+
     this.client.on('disconnect', (reason: string) => {
+      if (!this.connected) return;
       this.logger.warn(`Бот ${this.config.botName} отключен: ${reason}`);
       this.connected = false;
     });

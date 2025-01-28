@@ -1,6 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ObserverService } from './observer.service';
-import { ObserverServiceConfigDto } from './dto/observer-service-config.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ObserverFactoryService } from './observer-factory.service';
 import { ObserverFactoryServiceConfigDto } from './dto/observer-factory-service-config.dto';
@@ -13,6 +12,11 @@ export class ObserverManagerService implements OnModuleDestroy {
 
   constructor(private readonly observerFactory: ObserverFactoryService) {
     process.on('SIGINT', async () => {
+      await this.disconnectAll();
+      process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
       await this.disconnectAll();
       process.exit(0);
     });

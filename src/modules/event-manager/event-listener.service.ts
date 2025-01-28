@@ -5,7 +5,6 @@ import { BanEventDto } from '../observer/dto/events/ban-event.dto';
 import { VoteEventDto } from '../observer/dto/events/vote-event.dto';
 import { VoteResultEventDto } from '../observer/dto/events/vote-result-event.dto';
 import { IMessage } from 'src/lib/client';
-import { ServerDiscoveryCacheService } from '../server-discovery/server-discovery-cache.service';
 import { EventStorageService } from '../event-storage/event-storage.service';
 import { Vote } from '../event-storage/entities/vote.entity';
 import { Server } from '../event-storage/entities/server.entity';
@@ -79,7 +78,11 @@ export class EventListenerService {
     const ban = new Ban(event);
     ban.server = new Server(event.server);
 
-    const savedBan = await this.eventStorageService.saveBan(ban);
+    const { id } = await this.eventStorageService.saveBan(ban);
+
+    const fullBan = await this.eventStorageService.getBanFull(id);
+    await this.telegramBotService.sendBan(fullBan);
+
     this.logger.debug(event);
   }
 

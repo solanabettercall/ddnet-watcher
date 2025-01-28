@@ -10,6 +10,7 @@ import { Address } from './entities/address.entity';
 import { MapInfo } from './entities/map.entity';
 import { Clan } from './entities/clan.entity';
 import { IVoteFullInfo } from './dto/vote-full-info.dto';
+import { IBanFullInfo } from './dto/ban-full-info.dto';
 
 @Injectable()
 export class EventStorageService implements OnApplicationBootstrap {
@@ -127,6 +128,77 @@ export class EventStorageService implements OnApplicationBootstrap {
             },
             totalBanCount: parseInt(raw.target_ban_count, 10),
             totalBanDuration: parseFloat(raw.target_ban_duration) || 0, // Если значение null, возвращается 0
+          }
+        : undefined,
+    };
+  }
+
+  async getBanFull(id: string): Promise<IBanFullInfo> {
+    const result = await this.banRepository
+      .createQueryBuilder('ban')
+      .leftJoinAndSelect('ban.target', 'target')
+      .leftJoinAndSelect('ban.server', 'server')
+      .leftJoinAndSelect('server.address', 'address')
+      .leftJoinAndSelect('target.clan', 'targetClan')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Ban, 'b')
+          .where('b.player_id = ban.player_id');
+      }, 'total_ban_count')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select(
+            'ROUND(SUM(EXTRACT(EPOCH FROM (b.until - b.created_at))) / 3600.0, 2)',
+            'total_ban_duration',
+          )
+          .from(Ban, 'b')
+          .where('b.player_id = ban.player_id');
+      }, 'total_ban_duration_hours')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = ban.player_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 HOUR'");
+      }, 'target_votes_last_hour')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = ban.player_id')
+          .andWhere("v.created_at > NOW() - INTERVAL '1 DAY'");
+      }, 'target_votes_last_day')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'count')
+          .from(Vote, 'v')
+          .where('v.target_id = ban.player_id');
+      }, 'target_votes_all_time')
+      .where('ban.id = :id', { id })
+      .getRawAndEntities();
+
+    if (!result || !result.entities || result.entities.length === 0) {
+      throw new Error(`Ban with id ${id} not found`);
+    }
+
+    const ban = result.entities[0];
+    const raw = result.raw[0];
+
+    const target = ban.target;
+
+    return {
+      ...ban,
+      target: target
+        ? {
+            ...target,
+            numberOfVotes: {
+              lastHour: parseInt(raw.target_votes_last_hour, 10),
+              lastDay: parseInt(raw.target_votes_last_day, 10),
+              allTime: parseInt(raw.target_votes_all_time, 10),
+            },
+            totalBanCount: parseInt(raw.total_ban_count, 10),
+            totalBanDuration: parseFloat(raw.total_ban_duration_hours) || 0,
           }
         : undefined,
     };

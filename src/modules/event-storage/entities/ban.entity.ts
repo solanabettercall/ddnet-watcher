@@ -14,7 +14,7 @@ import { IBanEvent } from 'src/modules/observer/interfaces/ban-event.interface';
 @Entity('bans')
 export class Ban {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @ManyToOne(() => Player, { nullable: false, eager: true })
   @JoinColumn({ name: 'player_id' })
