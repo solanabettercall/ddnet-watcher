@@ -42,10 +42,10 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
     return servers;
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkAndReconnectObservers() {
     // Получаем список актуальных серверов
-    const servers = await this.getTestServers();
+    const servers = await this.getKobraRusServers();
 
     // Создаем Map для хранения текущих карт на серверах
     const currentServerMap = new Map<string, string>();
