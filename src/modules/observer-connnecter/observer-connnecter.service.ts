@@ -16,7 +16,7 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ObserverConnnecterService.name);
 
   async onApplicationBootstrap() {
-    const servers = await this.getTestServers();
+    const servers = await this.getKobraRusServers();
 
     for (const server of servers) {
       await this.observerManagerService.addObserver({
@@ -43,7 +43,7 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
     return servers;
   }
 
-  // @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async checkAndReconnectObservers() {
     // Получаем список актуальных серверов
     const servers = await this.getKobraRusServers();
