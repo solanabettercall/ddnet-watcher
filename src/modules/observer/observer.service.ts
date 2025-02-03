@@ -50,6 +50,18 @@ export class ObserverService {
       this.config.server.address.host,
       this.config.server.address.port,
       this.config.botName,
+      {
+        identity: {
+          name: this.config.botName,
+          clan: '',
+          country: -1,
+          skin: this.config.skin,
+          use_custom_color: 0,
+          color_body: 10346103,
+          color_feet: 65535,
+          id: 0,
+        },
+      },
     );
     this.logger = new Logger(this.getServerName());
     this.registerEventHandlers();
@@ -244,33 +256,6 @@ export class ObserverService {
       return true;
     }
     return false;
-  }
-
-  private async cachePlayers() {
-    for (const { name, clan } of this.client.SnapshotUnpacker
-      .AllObjClientInfo) {
-      await this.serverDiscoveryCacheService.cachePlayer(
-        this.config.server.address,
-        new Player(name, clan),
-        0,
-      );
-    }
-  }
-
-  private async cachePlayer(name: string) {
-    console.log('cachePlayer', this.client.SnapshotUnpacker.AllObjClientInfo);
-
-    const client = this.client.SnapshotUnpacker.AllObjClientInfo.find(
-      (client) => client.name === name,
-    );
-
-    if (client) {
-      await this.serverDiscoveryCacheService.cachePlayer(
-        this.config.server.address,
-        new Player(client.name, client.clan),
-        0,
-      );
-    }
   }
 
   async disconnect(): Promise<void> {

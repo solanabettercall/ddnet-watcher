@@ -16,12 +16,13 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ObserverConnnecterService.name);
 
   async onApplicationBootstrap() {
-    const servers = await this.getKobraRusServers();
+    const servers = await this.getTestServers();
 
     for (const server of servers) {
       await this.observerManagerService.addObserver({
         address: server.address,
-        botName: 'Watcher',
+        botName: 'Thoth',
+        skin: 'monkey',
       });
     }
   }
@@ -42,7 +43,7 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
     return servers;
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async checkAndReconnectObservers() {
     // Получаем список актуальных серверов
     const servers = await this.getKobraRusServers();
@@ -94,7 +95,8 @@ export class ObserverConnnecterService implements OnApplicationBootstrap {
         this.logger.log(`Подключаем бота к серверу ${key}...`);
         await this.observerManagerService.addObserver({
           address: server.address,
-          botName: 'Watcher',
+          botName: 'Thoth',
+          skin: 'monkey',
         });
       }
     }

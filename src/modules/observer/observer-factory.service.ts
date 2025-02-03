@@ -40,6 +40,7 @@ export class ObserverFactoryService {
         {
           server,
           botName: config.botName,
+          skin: config.skin,
         },
         this.serverDiscoveryCacheService,
       );
@@ -50,6 +51,7 @@ export class ObserverFactoryService {
       {
         server,
         botName: config.botName,
+        skin: config.skin,
       },
       this.serverDiscoveryCacheService,
     );

@@ -4,4 +4,5 @@ import { Server } from 'src/modules/event-storage/entities/server.entity';
 export class ObserverServiceConfigDto {
   server: Server;
   botName: string;
+  skin: string;
 }

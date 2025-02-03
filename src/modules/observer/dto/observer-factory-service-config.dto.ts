@@ -10,4 +10,5 @@ interface IObserveServiceAddress {
 export class ObserverFactoryServiceConfigDto {
   address: IObserveServiceAddress;
   botName: string;
+  skin: string;
 }
